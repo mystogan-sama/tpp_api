@@ -9,6 +9,7 @@ from app.sso_helper import insert_user_activity, current_user, check_unit_privil
 from app.utils import row2dict
 from . import crudTitle, apiPath, modelName
 from ..tpp_indeks.model import tpp_indeks
+from ..tpp_kriteria.model import tpp_kriteria
 
 
 class tpp_structural(db.Model):
@@ -24,17 +25,26 @@ class tpp_structural(db.Model):
     id_unitKerja = db.Column(db.BigInteger, db.ForeignKey("tpp_unitKerja.id"), nullable=True)
     Id_JobLevel = db.Column(db.BigInteger, db.ForeignKey("tpp_jobLevel.id"), nullable=True)
     id_kelas = db.Column(db.BigInteger, db.ForeignKey("tpp_basic.kelas"), nullable=True)
+    level = db.Column(db.Integer, nullable=True)
 
     tpp_kriteria_kerja = db.relationship("tpp_kriteria_kerja", backref=modelName, lazy="dynamic")
+    tpp_kriteria_kerja_det = db.relationship(
+        "tpp_kriteria_kerja_det",
+        secondary="tpp_kriteria_kerja",
+        primaryjoin="tpp_structural.id == tpp_kriteria_kerja.id_structural",
+        secondaryjoin="tpp_kriteria_kerja.id == tpp_kriteria_kerja_det.id_kriteriaKerja",
+        viewonly=True,
+        lazy='dynamic'
+    )
     tpp_trans = db.relationship("tpp_trans", backref=modelName, lazy="dynamic")
 
     @property
     def UnitKerja_name(self):
-        return f"| {self.tpp_unitKerja.name}" if self.tpp_unitKerja else None
+        return f"{self.tpp_unitKerja.name}" if self.tpp_unitKerja else None
 
     @property
     def JobLevel_name(self):
-        return f"| {self.tpp_jobLevel.name}" if self.tpp_jobLevel else None
+        return f"{self.tpp_jobLevel.name}" if self.tpp_jobLevel else None
 
     # @property
     # def nilai_tpp_basic(self):
@@ -58,80 +68,116 @@ class tpp_structural(db.Model):
     def bpk_ri(self):
         return f"{self.tpp_basic.bpk_ri}" if self.tpp_basic else None
 
-    @property
+    @property   
     def beban_kerja(self):
-        """Mengembalikan beban kerja dalam format desimal"""
-        kriteria = self.tpp_kriteria_kerja.first()
-        if not kriteria or kriteria.beban_kerja is None:
-            return Decimal('0.00')
+        """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
+        total = Decimal('0.00')
 
-        # Konversi ke Decimal dengan presisi 2 digit
-        return Decimal(str(kriteria.beban_kerja)).quantize(Decimal('0.00'))
+        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+                if detail.kriteria and detail.kriteria.code.startswith("1."):
+                    try:
+                        total += Decimal(detail.kriteria_formula or 0)
+                    except:
+                        continue
+
+        return total.quantize(Decimal('0.00'))
 
     @property
     def prestasi_kerja(self):
-        """
-        Menjumlahkan (SUM) semua nilai prestasi kerja dari komponen yang aktif (status=1)
-        Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
-        """
-        if not self.tpp_kriteria_kerja:
-            return Decimal('0.00')
+        """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
+        total = Decimal('0.00')
 
-        kriteria = self.tpp_kriteria_kerja.first()
-        if not kriteria:
-            return Decimal('0.00')
-
-        komponen = [
-            (kriteria.status_tapd, kriteria.prestasi_tapd),
-            (kriteria.status_pptk, kriteria.prestasi_pptk),
-            (kriteria.status_ja, kriteria.prestasi_ja),
-            (kriteria.status_jf, kriteria.prestasi_jf),
-            (kriteria.status_jp, kriteria.prestasi_jp),
-            (kriteria.status_p_keu, kriteria.prestasi_p_keu)
-        ]
-
-        total = sum(
-            Decimal(str(prestasi or 0))
-            for status, prestasi in komponen
-            if status == 1
-        )
+        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+                if detail.kriteria and detail.kriteria.code.startswith("2."):
+                    try:
+                        total += Decimal(detail.kriteria_formula or 0)
+                    except:
+                        continue
 
         return total.quantize(Decimal('0.00'))
 
     @property
     def kondisi_kerja(self):
-        """
-        Menjumlahkan (SUM) semua nilai kondisi kerja dari komponen yang aktif (status=1)
-        Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
-        """
-        if not self.tpp_kriteria_kerja:
-            return Decimal('0.00')
+        """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
+        total = Decimal('0.00')
 
-        kriteria = self.tpp_kriteria_kerja.first()
-        if not kriteria:
-            return Decimal('0.00')
-
-        komponen = [
-            (kriteria.status_pengawasan, kriteria.kondisi_pengawasan),
-            (kriteria.status_kesehatan, kriteria.kondisi_kesehatan),
-            (kriteria.status_k_p_keu, kriteria.kondisi_p_keu),
-            (kriteria.status_perencanaan, kriteria.kondisi_perencanaan),
-            (kriteria.status_trantibumlinmas, kriteria.kondisi_trantibumlinmas),
-            (kriteria.status_bijak_kdh, kriteria.kondisi_bijak_kdh),
-            (kriteria.status_resiko_kerja, kriteria.kondisi_resiko_kerja),
-            (kriteria.status_resiko_tinggi, kriteria.kondisi_resiko_tinggi),
-            (kriteria.status_kelangkaan_profesi, kriteria.kelangkaan_profesi),
-            (kriteria.status_tempat_bertugas, kriteria.tempat_bertugas),
-            (kriteria.status_objektif_lainnya, kriteria.objektif_lainnya)
-        ]
-
-        total = sum(
-            Decimal(str(kondisi or 0))
-            for status, kondisi in komponen
-            if status == 1
-        )
+        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+                if detail.kriteria and detail.kriteria.code.startswith("3."):
+                    try:
+                        total += Decimal(detail.kriteria_formula or 0)
+                    except:
+                        continue
 
         return total.quantize(Decimal('0.00'))
+
+
+    # @property
+    # def prestasi_kerja(self):
+    #     """
+    #     Menjumlahkan (SUM) semua nilai prestasi kerja dari komponen yang aktif (status=1)
+    #     Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
+    #     """
+    #     if not self.tpp_kriteria_kerja:
+    #         return Decimal('0.00')
+    #
+    #     kriteria = self.tpp_kriteria_kerja.first()
+    #     if not kriteria:
+    #         return Decimal('0.00')
+    #
+    #     komponen = [
+    #         (kriteria.status_tapd, kriteria.prestasi_tapd),
+    #         (kriteria.status_pptk, kriteria.prestasi_pptk),
+    #         (kriteria.status_ja, kriteria.prestasi_ja),
+    #         (kriteria.status_jf, kriteria.prestasi_jf),
+    #         (kriteria.status_jp, kriteria.prestasi_jp),
+    #         (kriteria.status_p_keu, kriteria.prestasi_p_keu)
+    #     ]
+    #
+    #     total = sum(
+    #         Decimal(str(prestasi or 0))
+    #         for status, prestasi in komponen
+    #         if status == 1
+    #     )
+    #
+    #     return total.quantize(Decimal('0.00'))
+
+    # @property
+    # def kondisi_kerja(self):
+    #     """
+    #     Menjumlahkan (SUM) semua nilai kondisi kerja dari komponen yang aktif (status=1)
+    #     Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
+    #     """
+    #     if not self.tpp_kriteria_kerja:
+    #         return Decimal('0.00')
+    #
+    #     kriteria = self.tpp_kriteria_kerja.first()
+    #     if not kriteria:
+    #         return Decimal('0.00')
+    #
+    #     komponen = [
+    #         (kriteria.status_pengawasan, kriteria.kondisi_pengawasan),
+    #         (kriteria.status_kesehatan, kriteria.kondisi_kesehatan),
+    #         (kriteria.status_k_p_keu, kriteria.kondisi_p_keu),
+    #         (kriteria.status_perencanaan, kriteria.kondisi_perencanaan),
+    #         (kriteria.status_trantibumlinmas, kriteria.kondisi_trantibumlinmas),
+    #         (kriteria.status_bijak_kdh, kriteria.kondisi_bijak_kdh),
+    #         (kriteria.status_resiko_kerja, kriteria.kondisi_resiko_kerja),
+    #         (kriteria.status_resiko_tinggi, kriteria.kondisi_resiko_tinggi),
+    #         (kriteria.status_kelangkaan_profesi, kriteria.kelangkaan_profesi),
+    #         (kriteria.status_tempat_bertugas, kriteria.tempat_bertugas),
+    #         (kriteria.status_objektif_lainnya, kriteria.objektif_lainnya)
+    #     ]
+    #
+    #     total = sum(
+    #         Decimal(str(kondisi or 0))
+    #         for status, kondisi in komponen
+    #         if status == 1
+    #     )
+    #
+    #     return total.quantize(Decimal('0.00'))
 #
 # # BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
 # @event.listens_for(db.session, "do_orm_execute")

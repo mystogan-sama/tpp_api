@@ -43,7 +43,7 @@ class tpp_indeks(db.Model):
     nilai_igr = db.Column(db.Integer, nullable=False, index=True)
 
     total_skor = db.Column(db.DECIMAL(18, 2), default=0, nullable=True)
-    nilai_ippd = db.Column(db.DECIMAL(18, 1), default=0, nullable=True)
+    nilai_ippd = db.Column(db.DECIMAL(18, 3), default=0, nullable=True)
     indeks_tpp = db.Column(db.DECIMAL(18, 9), default=0, nullable=True)
     created_date = db.Column(db.DateTime, default=datetime.now, nullable=True)
 

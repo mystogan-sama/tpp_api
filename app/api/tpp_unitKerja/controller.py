@@ -26,8 +26,8 @@ class List(Resource):
         parser.add_argument('page', type=int, help='page/start, fill with number')
         parser.add_argument('length', type=int, help='length of data, fill with number')
         parser.add_argument('search', type=str, help='for filter searching')
-    if 'parent_id' in respAndPayloadFields:
-        parser.add_argument('flat_mode', type=inputs.boolean, default=False, help='flat response data')
+    # if 'parent_id' in respAndPayloadFields:
+    #     parser.add_argument('flat_mode', type=inputs.boolean, default=False, help='flat response data')
     if filterField:
         for row in filterField:
             parser.add_argument(

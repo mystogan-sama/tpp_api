@@ -9,7 +9,6 @@ respAndPayloadFields = {
     "name": fields.String(required=True, min_length=5, max_length=200, ),
     "description": fields.String(required=False, min_length=5, max_length=512, ),
     "eselon_level": fields.Integer(required=True, example=1, ),
-    "parent_id": fields.Integer(required=True, example=1, ),
 }
 uniqueField = []
 searchField = ["name"]

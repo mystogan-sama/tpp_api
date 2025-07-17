@@ -10,6 +10,7 @@ modelName = 'tpp_kriteria_kerja'
 respAndPayloadFields = {
     "id":  NullableInteger(readonly=True, example=1, ),
     "id_unit": fields.Integer(required=True, example=1001),
+    "unit_name": fields.String(example="", ),
     "id_structural": fields.Integer(required=True, example=2001),
 
     # Beban kerja

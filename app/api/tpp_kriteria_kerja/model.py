@@ -12,6 +12,7 @@ class tpp_kriteria_kerja(db.Model):
     __tablename__ = f'{modelName}'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id_unit = db.Column(db.BigInteger, nullable=False)
+    unit_name = db.Column(db.String(200), nullable=True)
     id_structural = db.Column(db.BigInteger, db.ForeignKey("tpp_structural.id"), nullable=False)
     beban_kerja = db.Column(db.DECIMAL(18, 2), default=0, nullable=True)
 
@@ -65,6 +66,7 @@ class tpp_kriteria_kerja(db.Model):
     created_date = db.Column(db.DateTime, default=datetime.now)
 
     # tpp_structural = db.relationship("tpp_structural", backref=modelName, lazy="dynamic")
+    kerja_details = db.relationship("tpp_kriteria_kerja_det", backref="kerja", lazy="dynamic")
 
     @property
     def structural_name(self):

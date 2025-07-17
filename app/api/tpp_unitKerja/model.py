@@ -15,7 +15,6 @@ class tpp_unitKerja(db.Model):
     name = db.Column(db.String(200), nullable=False, index=True)
     description = db.Column(db.String(512), nullable=True)
     eselon_level = db.Column(db.Integer, nullable=True)
-    parent_id = db.Column(db.BigInteger, db.ForeignKey("tpp_unitKerja.id"), nullable=True)
 
     tpp_structural = db.relationship("tpp_structural", backref=modelName, lazy="dynamic")
 
