@@ -5,6 +5,9 @@ from sqlalchemy.dialects import mssql
 
 from app import db
 from . import modelName
+from ..tpp_indeks.model import tpp_indeks
+
+
 # from ..tpp_basicDetail.model import tpp_basicDetail
 
 
@@ -17,6 +20,33 @@ class tpp_basic(db.Model):
 
     tpp_structural = db.relationship("tpp_structural", backref=modelName, lazy="dynamic")
 
+    @property
+    def nilai_basic_tpp(self):
+        """
+        Ambil indeks_tpp dari tpp_indeks (tahun ini) dan hitung bpk_ri * indeks_tpp.
+        Tidak menggunakan kelas_jab karena tidak ada keterkaitan langsung.
+        """
+        tahun_ini = datetime.now().year
+
+        indeks = db.session.query(tpp_indeks.indeks_tpp) \
+            .filter(func.year(tpp_indeks.created_date) == tahun_ini) \
+            .order_by(tpp_indeks.created_date.desc()) \
+            .first()
+
+        if indeks:
+            return self.bpk_ri * indeks[0]
+        return None
+
+    @property
+    def indeks_tpp(self):
+        tahun_ini = datetime.now().year
+
+        indeks = db.session.query(tpp_indeks.indeks_tpp) \
+            .filter(func.year(tpp_indeks.created_date) == tahun_ini) \
+            .order_by(tpp_indeks.created_date.desc()) \
+            .first()
+
+        return indeks[0]
     # @property
     # def detail_count(self):
     #     return db.session.query(func.count(tpp_basicDetail.id)).filter(

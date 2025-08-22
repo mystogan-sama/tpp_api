@@ -12,6 +12,8 @@ respAndPayloadFields = {
     "kelas": fields.Integer(required=False, example="", ),
     "bpk_ri": fields.Fixed(required=False, example="", ),
     'indeks': fields.Float(required=False, description='Harga dalam Rupiah'),
+    "nilai_basic_tpp": fields.Fixed(required=False, example="", ),
+    'indeks_tpp': fields.Float(required=False, description='Harga dalam Rupiah'),
 
 }
 uniqueField = [""]

@@ -3,6 +3,7 @@ from decimal import Decimal
 from threading import Thread
 
 from sqlalchemy import event, extract
+from sqlalchemy.dialects import mssql
 
 from app import db
 from app.sso_helper import insert_user_activity, current_user, check_unit_privilege_on_read_db
@@ -18,6 +19,7 @@ class tpp_kriteria(db.Model):
     code = db.Column(db.String(100), nullable=False, unique=True)
     name = db.Column(db.String(512), nullable=False, index=True)
     formula = db.Column(db.DECIMAL(18, 2), default=0, nullable=True)
+    nominal = db.Column(mssql.MONEY, default=0, nullable=True)
     depth = db.Column(db.Integer, nullable=True)
 
     # tpp_kriteria_cluster_det = db.relationship("tpp_kriteria_cluster_det", backref=modelName, lazy="dynamic")

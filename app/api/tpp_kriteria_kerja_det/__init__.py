@@ -10,6 +10,7 @@ respAndPayloadFields = {
     "id_kriteria": fields.Integer(example=1, ),
     "kriteria_name": fields.String(example="", ),
     "kriteria_formula": fields.Float(required=False, example=75.0, description='Bobot 3%'),
+    "kriteria_nominal": fields.Fixed(example=1, ),
     "parent_name": fields.String(example="", ),
     "id_parent": fields.Integer(example=1, ),
 }

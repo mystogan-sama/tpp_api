@@ -25,8 +25,23 @@ respAndPayloadFields = {
     'bpk_ri': fields.Float(required=False, description='Harga dalam Rupiah'),
     'indeks_tpp': fields.Float(required=False, description='Harga dalam Rupiah'),
     "beban_kerja": fields.Float(readonly=True, required=False, example="", ),
+    "beban_kerja_persen": fields.Float(readonly=True, required=False, example="", ),
+    "nominal_beban_kerja": fields.Fixed(readonly=True, required=False, example="", ),
     "prestasi_kerja": fields.Float(readonly=True, required=False, example="", ),
+    "prestasi_kerja_persen": fields.Float(readonly=True, required=False, example="", ),
+    "nominal_prestasi_kerja": fields.Fixed(readonly=True, required=False, example="", ),
     "kondisi_kerja": fields.Float(readonly=True, required=False, example="", ),
+    "kondisi_kerja_persen": fields.Float(readonly=True, required=False, example="", ),
+    "nominal_kondisi_kerja": fields.Fixed(readonly=True, required=False, example="", ),
+    "tempat_bekerja": fields.Float(readonly=True, required=False, example="", ),
+    "tempat_bekerja_persen": fields.Float(readonly=True, required=False, example="", ),
+    "nominal_tempat_bekerja": fields.Fixed(readonly=True, required=False, example="", ),
+    "kelangkaan_profesi": fields.Float(readonly=True, required=False, example="", ),
+    "kelangkaan_profesi_persen": fields.Float(readonly=True, required=False, example="", ),
+    "nominal_kelangkaan_profesi": fields.Fixed(readonly=True, required=False, example="", ),
+    "pertimbangan_objektif_lainnya": fields.Float(readonly=True, required=False, example="", ),
+    "pertimbangan_objektif_lainnya_persen": fields.Float(readonly=True, required=False, example="", ),
+    "nominal_pertimbangan_objektif_lainnya": fields.Fixed(readonly=True, required=False, example="", ),
 }
 uniqueField = ["code"]
 searchField = ["code", "name", "UnitKerja_name", "JobLevel_name"]

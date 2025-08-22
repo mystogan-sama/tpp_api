@@ -69,6 +69,18 @@ class ById(Resource):
     @api.expect(doc.default_data_response)
     @token_required
     def put(self, id):
+        data = request.json.copy()
+
+        # Jika kriteria_formula diupdate, maka kriteria_nominal diset 0
+        if "kriteria_formula" in data and data["kriteria_formula"]:
+            data["kriteria_nominal"] = 0
+
+        # Jika kriteria_nominal diupdate, maka kriteria_formula diset 0
+        elif "kriteria_nominal" in data and data["kriteria_nominal"]:
+            data["kriteria_formula"] = 0
+
+        request._cached_json = (data, request._cached_json[1])
+
         return GeneralPutById(id, doc, crudTitle, Service, request, modelName, current_user, fileFields,
                               internalApi_byUrl)
 

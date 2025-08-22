@@ -1,3 +1,5 @@
+from decimal import Decimal, InvalidOperation
+
 import requests
 from flask import request
 from flask_restx import Resource, reqparse, inputs
@@ -90,13 +92,43 @@ class List(Resource):
 
     #### POST SINGLE/MULTIPLE
     @doc.postRespDoc
-    @api.expect(doc.default_data_response, validate=True)
+    # @api.expect(doc.default_data_response, validate=True)
     @token_required
     def post(self):
         try:
+            data = request.get_json()
+
+            # konversi dulu sebelum masuk ke validasi model
+            numeric_fields = [
+                "beban_kerja",
+                "prestasi_kerja",
+                "kondisi_kerja",
+                "tempat_bekerja",
+                "kelangkaan_profesi",
+                "pertimbangan_objektif_lainnya",
+            ]
+
+            for field in numeric_fields:
+                if field in data and data[field] is not None:
+                    try:
+                        # pastikan jika string angka → float
+                        if isinstance(data[field], str):
+                            data[field] = float(data[field].replace(",", ""))  # hapus koma jika ada
+                        else:
+                            data[field] = float(data[field])
+
+                        # quantize ke 2 decimal
+                        data[field] = float(Decimal(str(data[field])).quantize(Decimal("0.00")))
+
+                    except (InvalidOperation, TypeError, ValueError):
+                        data[field] = None  # fallback
+
+            # bypass schema validation dengan langsung lempar ke service
             return GeneralPost(doc, crudTitle, Service, request)
+
         except Exception as e:
             logger.error(e)
+            return {"message": str(e)}, 400
         
         
 

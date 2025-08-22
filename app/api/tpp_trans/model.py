@@ -19,6 +19,7 @@ class tpp_trans(db.Model):
     Id_JobLevel = db.Column(db.Integer, nullable=True)
     id_kelas = db.Column(db.BigInteger, nullable=True)
     jml_pemangku = db.Column(db.Integer, nullable=False)
+    bulan = db.Column(db.Integer, nullable=False)
     basic_tpp = db.Column(mssql.MONEY, nullable=True)
     evidence_beban = db.Column(db.String(1024), nullable=True, index=True)
     beban_kerja = db.Column(db.DECIMAL(18, 2), nullable=True)
@@ -32,6 +33,18 @@ class tpp_trans(db.Model):
     kondisi_kerja = db.Column(db.DECIMAL(18, 2), nullable=True)
     kondisi_kerja_rp = db.Column(mssql.MONEY, nullable=True)
     kondisi_kerja_rp_bln = db.Column(mssql.MONEY, nullable=True)
+    evidence_tempat_bekerja = db.Column(db.String(1024), nullable=True, index=True)
+    tempat_bekerja = db.Column(db.DECIMAL(18, 2), nullable=True)
+    tempat_bekerja_rp = db.Column(mssql.MONEY, nullable=True)
+    tempat_bekerja_rp_bln = db.Column(mssql.MONEY, nullable=True)
+    evidence_kelangkaan_profesi = db.Column(db.String(1024), nullable=True, index=True)
+    kelangkaan_profesi = db.Column(db.DECIMAL(18, 2), nullable=True)
+    kelangkaan_profesi_rp = db.Column(mssql.MONEY, nullable=True)
+    kelangkaan_profesi_rp_bln = db.Column(mssql.MONEY, nullable=True)
+    evidence_pertimbangan_objektif_lainnya = db.Column(db.String(1024), nullable=True, index=True)
+    pertimbangan_objektif_lainnya = db.Column(db.DECIMAL(18, 2), nullable=True)
+    pertimbangan_objektif_lainnya_rp = db.Column(mssql.MONEY, nullable=True)
+    pertimbangan_objektif_lainnya_rp_bln = db.Column(mssql.MONEY, nullable=True)
 
     #
     #
@@ -49,8 +62,11 @@ class tpp_trans(db.Model):
         beban = Decimal(str(self.beban_kerja_rp or 0))
         prestasi = Decimal(str(self.prestasi_kerja_rp or 0))
         kondisi = Decimal(str(self.kondisi_kerja_rp or 0))
+        tempat = Decimal(str(self.tempat_bekerja_rp or 0))
+        profesi = Decimal(str(self.kelangkaan_profesi_rp or 0))
+        pol = Decimal(str(self.pertimbangan_objektif_lainnya_rp or 0))
 
-        total = beban + prestasi + kondisi
+        total = beban + prestasi + kondisi + tempat + profesi + pol
         return total.quantize(Decimal('0.00'))
 
     @property
@@ -60,7 +76,7 @@ class tpp_trans(db.Model):
         Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
         """
         bulanan = self.total_bulan  # Sudah dalam format Decimal
-        tahunan = bulanan * Decimal('12')
+        tahunan = bulanan * self.bulan
         return tahunan.quantize(Decimal('0.00'))
 
 #

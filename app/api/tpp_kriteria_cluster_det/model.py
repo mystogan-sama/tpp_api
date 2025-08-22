@@ -1,6 +1,7 @@
 from threading import Thread
 
 from sqlalchemy import event
+from sqlalchemy.dialects import mssql
 
 from app import db
 from app.sso_helper import check_unit_privilege_on_changes_db, insert_user_activity, current_user, \
@@ -17,6 +18,7 @@ class tpp_kriteria_cluster_det(db.Model):
     id_kriteria = db.Column(db.Integer, db.ForeignKey("tpp_kriteria.id"), nullable=True)
     kriteria_name = db.Column(db.String(512), nullable=True)
     kriteria_formula = db.Column(db.DECIMAL(18, 2), default=0, nullable=True)
+    kriteria_nominal = db.Column(mssql.MONEY, default=0, nullable=True)
 
     # tpp_structural = db.relationship("tpp_structural", backref=modelName, lazy="dynamic")
     kriteria = db.relationship("tpp_kriteria", foreign_keys=[id_kriteria], backref="cluster_details")

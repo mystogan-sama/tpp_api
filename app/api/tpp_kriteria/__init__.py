@@ -12,6 +12,7 @@ respAndPayloadFields = {
     "code": fields.String(required=False, max_length=100, example="1.01.01.", ),
     "name": fields.String(required=True, min_length=5, max_length=512, example="tpp_kriteria sample", ),
     "formula": fields.Float(readonly=True, required=False, example="", ),
+    "nominal": fields.Fixed(example=1, ),
     "depth": fields.Integer(example=1, ),
 }
 uniqueField = ["code", "name"]
