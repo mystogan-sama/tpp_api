@@ -5,7 +5,8 @@ from threading import Thread
 from sqlalchemy import event, extract
 
 from app import db
-from app.sso_helper import insert_user_activity, current_user, check_unit_privilege_on_read_db
+from app.sso_helper import insert_user_activity, current_user, check_unit_privilege_on_read_db, \
+    check_unit_and_employee_privilege_on_read_db
 from app.utils import row2dict
 from . import crudTitle, apiPath, modelName
 from ..tpp_indeks.model import tpp_indeks
@@ -334,19 +335,12 @@ class tpp_structural(db.Model):
     #
     #     return total.quantize(Decimal('0.00'))
 #
-# # BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
-# @event.listens_for(db.session, "do_orm_execute")
-# def check_unit_privilege_read(orm_execute_state):
-#     orm_execute_state.update_execution_options(populate_existing=True)
-#     col_descriptions = orm_execute_state.statement.column_descriptions
-#     if col_descriptions[0]['entity'] is tpp_structural:
-#         columns = orm_execute_state.statement.columns
-#         if 'id_unit' in columns.keys():
-#             if current_user:
-#                 member_of_list = current_user['member_of_list']
-#                 check_unit_privilege_on_read_db(orm_execute_state, member_of_list, tpp_structural)
-#
-#
+# BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
+@event.listens_for(db.session, "do_orm_execute")
+def check_unit_privilege_read(orm_execute_state):
+    check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_structural)
+
+
 # # BEFORE INSERT ADD ID UNIT
 # @event.listens_for(db.Session, 'before_flush')
 # def before_flush(session, flush_context, instances):

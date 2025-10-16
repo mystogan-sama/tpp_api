@@ -47,7 +47,7 @@ respAndPayloadFields = {
 uniqueField = ["code"]
 searchField = ["code", "nama_jabatan"]
 sortField = ["id"]
-filterField = ["id"]
+filterField = ["id", "id_unit"]
 enabledPagination = False
 fileFields = []
 

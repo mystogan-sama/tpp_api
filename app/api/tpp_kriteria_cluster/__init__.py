@@ -14,7 +14,7 @@ respAndPayloadFields = {
 uniqueField = []
 searchField = ["unit_name"]
 sortField = []
-filterField = []
+filterField = ["id_unit", "id_cluster"]
 enabledPagination = False
 fileFields = []
 

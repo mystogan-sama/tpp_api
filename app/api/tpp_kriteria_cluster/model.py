@@ -4,7 +4,7 @@ from sqlalchemy import event
 
 from app import db
 from app.sso_helper import check_unit_privilege_on_changes_db, insert_user_activity, current_user, \
-    check_unit_and_employee_privilege_on_read_db
+    check_unit_and_employee_privilege_on_read_db, check_unit_privilege_on_read_db
 from app.utils import row2dict
 from . import crudTitle, apiPath, modelName
 
@@ -23,10 +23,9 @@ class tpp_kriteria_cluster(db.Model):
         return f"{self.tpp_cluster.name}" if self.tpp_cluster else None
 
 # BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
-# @event.listens_for(db.session, "do_orm_execute")
-# def check_unit_privilege_read(orm_execute_state):
-#     check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_kriteria_cluster)
-#
+@event.listens_for(db.session, "do_orm_execute")
+def check_unit_privilege_read(orm_execute_state):
+    check_unit_privilege_on_read_db(orm_execute_state, tpp_kriteria_cluster)
 #
 # @event.listens_for(tpp_kriteria_cluster, 'before_insert')
 # def check_unit_privilege_insert(mapper, connection, target):

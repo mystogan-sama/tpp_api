@@ -1,10 +1,13 @@
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, event
 from sqlalchemy.dialects import mssql
 
 from app import db
 from . import modelName
+from ...sso_helper import check_unit_and_employee_privilege_on_read_db
+
+
 # from ..tpp_kriteria_kerjaDetail.model import tpp_kriteria_kerjaDetail
 
 
@@ -92,11 +95,11 @@ class tpp_kriteria_kerja(db.Model):
 
 #
 # # BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
-# @event.listens_for(db.session, "do_orm_execute")
-# def check_unit_privilege_read(orm_execute_state):
-#     check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_kriteria_kerja)
-#
-#
+@event.listens_for(db.session, "do_orm_execute")
+def check_unit_privilege_read(orm_execute_state):
+    check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_kriteria_kerja)
+
+
 # @event.listens_for(tpp_kriteria_kerja, 'before_insert')
 # def check_unit_privilege_insert(mapper, connection, target):
 #     member_of_list = current_user['member_of_list']
