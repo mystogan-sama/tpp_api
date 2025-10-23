@@ -19,6 +19,7 @@ class tpp_trans(db.Model):
     id_unitKerja = db.Column(db.BigInteger, nullable=True)
     Id_JobLevel = db.Column(db.Integer, nullable=True)
     id_kelas = db.Column(db.BigInteger, nullable=True)
+    asn = db.Column(db.Integer, nullable=False)
     jml_pemangku = db.Column(db.Integer, nullable=False)
     bulan = db.Column(db.Integer, nullable=False)
     basic_tpp = db.Column(mssql.MONEY, nullable=True)
@@ -46,6 +47,8 @@ class tpp_trans(db.Model):
     pertimbangan_objektif_lainnya = db.Column(db.DECIMAL(18, 2), nullable=True)
     pertimbangan_objektif_lainnya_rp = db.Column(mssql.MONEY, nullable=True)
     pertimbangan_objektif_lainnya_rp_bln = db.Column(mssql.MONEY, nullable=True)
+    total_bulan = db.Column(mssql.MONEY, nullable=True)
+    total_tahun = db.Column(mssql.MONEY, nullable=True)
 
     #
     #
@@ -53,37 +56,37 @@ class tpp_trans(db.Model):
     def nama_jabatan(self):
         return f"{self.tpp_structural.name}" if self.tpp_structural else None
     #
-    @property
-    def total_bulan(self):
-        """
-        Menghitung total per bulan dari:
-        beban_kerja_rp + prestasi_kerja_rp + kondisi_kerja_rp
-        Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
-        """
-        beban = Decimal(str(self.beban_kerja_rp or 0))
-        prestasi = Decimal(str(self.prestasi_kerja_rp or 0))
-        kondisi = Decimal(str(self.kondisi_kerja_rp or 0))
-        tempat = Decimal(str(self.tempat_bekerja_rp or 0))
-        profesi = Decimal(str(self.kelangkaan_profesi_rp or 0))
-        pol = Decimal(str(self.pertimbangan_objektif_lainnya_rp or 0))
+    # @property
+    # def total_bulan(self):
+    #     """
+    #     Menghitung total per bulan dari:
+    #     beban_kerja_rp + prestasi_kerja_rp + kondisi_kerja_rp
+    #     Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
+    #     """
+    #     beban = Decimal(str(self.beban_kerja_rp or 0))
+    #     prestasi = Decimal(str(self.prestasi_kerja_rp or 0))
+    #     kondisi = Decimal(str(self.kondisi_kerja_rp or 0))
+    #     tempat = Decimal(str(self.tempat_bekerja_rp or 0))
+    #     profesi = Decimal(str(self.kelangkaan_profesi_rp or 0))
+    #     pol = Decimal(str(self.pertimbangan_objektif_lainnya_rp or 0))
+    #
+    #     total = beban + prestasi + kondisi + tempat + profesi + pol
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # @property
+    # def total_tahun(self):
+    #     """
+    #     Menghitung total per tahun (total_bulan * 12)
+    #     Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
+    #     """
+    #     bulanan = self.total_bulan  # Sudah dalam format Decimal
+    #     tahunan = bulanan * self.bulan
+    #     return tahunan.quantize(Decimal('0.00'))
 
-        total = beban + prestasi + kondisi + tempat + profesi + pol
-        return total.quantize(Decimal('0.00'))
 
-    @property
-    def total_tahun(self):
-        """
-        Menghitung total per tahun (total_bulan * 12)
-        Mengembalikan nilai dalam format Decimal dengan 2 digit desimal
-        """
-        bulanan = self.total_bulan  # Sudah dalam format Decimal
-        tahunan = bulanan * self.bulan
-        return tahunan.quantize(Decimal('0.00'))
-
-
-@event.listens_for(db.session, "do_orm_execute")
-def check_unit_privilege_read(orm_execute_state):
-    check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_trans)
+# @event.listens_for(db.session, "do_orm_execute")
+# def check_unit_privilege_read(orm_execute_state):
+#     check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_trans)
 #
 # # BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
 # @event.listens_for(db.session, "do_orm_execute")

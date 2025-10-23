@@ -71,6 +71,32 @@ class List(Resource):
             resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
             resp['data'] = result_list
             return resp, 200
+
+        if args["kriteria"] == "2":
+            sqlQuery = text(f'''
+                        SELECT *
+                        FROM tpp_kriteria
+                        WHERE depth=1
+                        ''')
+            data = db.engine.execute(sqlQuery)
+            result_list = []
+
+            for rowproxy in data:
+                row_dict = {}
+                for column, value in rowproxy.items():
+                    if isinstance(value, datetime):
+                        row_dict[column] = value.isoformat()
+                    elif isinstance(value, Decimal):
+                        row_dict[column] = float(value)
+                    elif column == '_disabled_select_':
+                        row_dict['_disabled_select_'] = bool(value)
+                    else:
+                        row_dict[column] = value
+                result_list.append(row_dict)
+            # print(a)
+            resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
+            resp['data'] = result_list
+            return resp, 200
         return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser)
         # return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, args, asData=True)
         # try:

@@ -23,6 +23,8 @@ from app.utils import GeneralGetList, \
 from . import crudTitle, enabledPagination, respAndPayloadFields, fileFields, modelName, filterField
 from .doc import doc
 from .service import Service
+from ..tpp_cluster.model import tpp_cluster
+from ..tpp_cluster_det.model import tpp_cluster_det
 from ..tpp_kriteria_cluster.model import tpp_kriteria_cluster
 from ..tpp_kriteria_cluster_det.model import tpp_kriteria_cluster_det
 from ..tpp_kriteria_kerja_det.model import tpp_kriteria_kerja_det
@@ -71,7 +73,115 @@ class List(Resource):
     @api.expect(parser)
     @token_required
     def get(self):
-        return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser)
+        args = parser.parse_args()
+        if args["detail"] == '1' and args['id_kriteriaKerja']:
+            sqlQuery = text(f'''
+                        SELECT
+                            tkk.id,
+                            tkk.id_unit,
+                            tkk.unit_name,
+                            tkk.id_structural,
+                            tkk.id_kelas,
+                            tkk.id_cluster,
+                            tkk.cluster_name,
+                            tkk.asn,
+                            tkk.created_date,
+                        
+                            -- ambil parent_id dan nama parent sesuai properti Python
+                            tk.parent_id AS id_parent,
+                            tp.name AS parent_name,                        
+                        
+                            tkkd.kriteria_name,
+                            tkkd.kriteria_formula,
+                            tkkd.kriteria_nominal,
+                            tb.bpk_ri,
+                        
+                            -- === Indeks TPP (subquery ambil nilai terakhir) ===
+                            (
+                                SELECT TOP 1 ti.indeks_tpp
+                                FROM tpp_indeks ti
+                                WHERE YEAR(ti.created_date) = YEAR(GETDATE())
+                                ORDER BY ti.created_date DESC
+                            ) AS indeks_tpp,
+                        
+                            -- === Hasil Perkalian bpk_ri * indeks_tpp ===
+                            tb.bpk_ri * (
+                                SELECT TOP 1 ti.indeks_tpp
+                                FROM tpp_indeks ti
+                                WHERE YEAR(ti.created_date) = YEAR(GETDATE())
+                                ORDER BY ti.created_date DESC
+                            ) AS total_bpk_ri_indeks_tpp,
+                        
+                            -- === Perhitungan Total TPP ===
+                            CASE 
+                                WHEN tkkd.kriteria_nominal IS NOT NULL THEN 
+                                    -- nominal langsung ditambahkan tanpa perhitungan
+                                    ((tkkd.kriteria_formula / 100.0) * (
+                                        tb.bpk_ri * (
+                                            SELECT TOP 1 ti.indeks_tpp
+                                            FROM tpp_indeks ti
+                                            WHERE YEAR(ti.created_date) = YEAR(GETDATE())
+                                            ORDER BY ti.created_date DESC
+                                        )
+                                    )) + tkkd.kriteria_nominal
+                                ELSE 
+                                    -- jika tidak ada nominal, gunakan formula persen saja
+                                    ((tkkd.kriteria_formula / 100.0) * (
+                                        tb.bpk_ri * (
+                                            SELECT TOP 1 ti.indeks_tpp
+                                            FROM tpp_indeks ti
+                                            WHERE YEAR(ti.created_date) = YEAR(GETDATE())
+                                            ORDER BY ti.created_date DESC
+                                        )
+                                    ))
+                            END AS total_tpp
+                        
+                        FROM
+                            tpp_kriteria_kerja AS tkk
+                            INNER JOIN tpp_kriteria_kerja_det AS tkkd 
+                                ON tkk.id = tkkd.id_kriteriaKerja
+                            LEFT JOIN tpp_kriteria AS tk 
+                                ON tk.id = tkkd.id_kriteria
+                            LEFT JOIN tpp_kriteria AS tp 
+                                ON tp.id = tk.parent_id   -- self join ke parent
+                            INNER JOIN tpp_basic AS tb 
+                                ON tb.kelas = tkk.id_kelas
+                        WHERE
+                            tkk.id = {args['id_kriteriaKerja']}
+                        GROUP BY
+                            tkk.id,
+                            tkk.id_unit,
+                            tkk.unit_name,
+                            tkk.id_structural,
+                            tkk.id_kelas,
+                            tkk.id_cluster,
+                            tkk.cluster_name,
+                            tkk.asn,
+                            tkk.created_date,
+                            tkkd.kriteria_name,
+                            tkkd.kriteria_formula,
+                            tkkd.kriteria_nominal,
+                            tb.bpk_ri,
+                            tk.parent_id,
+                            tp.name;                    
+                                    ''')
+
+            data = db.engine.execute(sqlQuery)
+            d, a = {}, []
+            for rowproxy in data:
+                for column, value in rowproxy.items():
+                    if isinstance(value, datetime):
+                        d = {**d, **{column: value.isoformat()}}
+                    elif isinstance(value, decimal.Decimal):
+                        d = {**d, **{column: float(value)}}
+                    else:
+                        d = {**d, **{column: value}}
+                a.append(d)
+            resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
+            resp['data'] = a
+            return resp, 200
+        else:
+            return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser)
 
     
 
@@ -83,19 +193,19 @@ class List(Resource):
         payload = request.get_json()
         print(payload)
 
-        id_unit = payload['id_unit']
+        id_cluster = payload['id_cluster']
 
         # 🔍 Ambil ID Kriteria Cluster berdasarkan ID Unit
-        kriteria_cluster = db.session.query(tpp_kriteria_cluster).filter_by(id_unit=id_unit).first()
-        if not kriteria_cluster:
+        cluster = db.session.query(tpp_cluster).filter_by(id=id_cluster).first()
+        if not cluster:
             return {"status": False, "message": "Kriteria cluster tidak ditemukan"}, 404
 
-        id_kriteria_cluster = kriteria_cluster.id
+        cluster_id = cluster.id
 
         # 🔍 Ambil semua detail kriteria dari cluster
-        kriteria_cluster_dets = db.session.query(tpp_kriteria_cluster_det).filter_by(
-            id_kriteriaCluster=id_kriteria_cluster).all()
-        if not kriteria_cluster_dets:
+        cluster_dets = db.session.query(tpp_cluster_det).filter_by(
+            id_cluster=cluster_id).all()
+        if not cluster_dets:
             return {"status": False, "message": "Tidak ada detail kriteria ditemukan"}, 404
 
         # ✅ Simpan ke tpp_kriteria_kerja (master) terlebih dahulu
@@ -107,19 +217,60 @@ class List(Resource):
 
         id_kriteriaKerja = result_post[0]["data"]["id"]
 
-        # 🔁 Simpan semua detail dari cluster ke tpp_kriteria_kerja_det
-        for det in kriteria_cluster_dets:
-            kerja_det = tpp_kriteria_kerja_det(
+        # 🔁 Simpan semua detail dari cluster ke tpp_kriteria_kerja_det nanti dirubah jadi kriteria generate
+        for det in cluster_dets:
+            cluster_det = tpp_kriteria_kerja_det(
                 id_kriteriaKerja=id_kriteriaKerja,
                 id_kriteria=det.id_kriteria,
                 kriteria_name=det.kriteria_name,
                 kriteria_formula=det.kriteria_formula
             )
-            db.session.add(kerja_det)
+            db.session.add(cluster_det)
 
         db.session.commit()
 
         return result_post
+
+        # payload = request.get_json()
+        # print(payload)
+        #
+        # id_unit = payload['id_unit']
+        #
+        # # 🔍 Ambil ID Kriteria Cluster berdasarkan ID Unit
+        # kriteria_cluster = db.session.query(tpp_kriteria_cluster).filter_by(id_unit=id_unit).first()
+        # if not kriteria_cluster:
+        #     return {"status": False, "message": "Kriteria cluster tidak ditemukan"}, 404
+        #
+        # id_kriteria_cluster = kriteria_cluster.id
+        #
+        # # 🔍 Ambil semua detail kriteria dari cluster
+        # kriteria_cluster_dets = db.session.query(tpp_kriteria_cluster_det).filter_by(
+        #     id_kriteriaCluster=id_kriteria_cluster).all()
+        # if not kriteria_cluster_dets:
+        #     return {"status": False, "message": "Tidak ada detail kriteria ditemukan"}, 404
+        #
+        # # ✅ Simpan ke tpp_kriteria_kerja (master) terlebih dahulu
+        # result_post = GeneralPost(doc, crudTitle, Service, request)
+        #
+        # # Pastikan penyimpanan berhasil, dan ambil ID hasil insert
+        # if not result_post[1] == 200 or not result_post[0].get("data", {}).get("id"):
+        #     return {"status": False, "message": "Gagal menyimpan data kriteria kerja"}, 500
+        #
+        # id_kriteriaKerja = result_post[0]["data"]["id"]
+        #
+        # # 🔁 Simpan semua detail dari cluster ke tpp_kriteria_kerja_det
+        # for det in kriteria_cluster_dets:
+        #     kerja_det = tpp_kriteria_kerja_det(
+        #         id_kriteriaKerja=id_kriteriaKerja,
+        #         id_kriteria=det.id_kriteria,
+        #         kriteria_name=det.kriteria_name,
+        #         kriteria_formula=det.kriteria_formula
+        #     )
+        #     db.session.add(kerja_det)
+        #
+        # db.session.commit()
+        #
+        # return result_post
 
     #### MULTIPLE-DELETE
     @doc.deleteMultiRespDoc

@@ -17,6 +17,11 @@ class tpp_kriteria_kerja(db.Model):
     id_unit = db.Column(db.BigInteger, nullable=False)
     unit_name = db.Column(db.String(200), nullable=True)
     id_structural = db.Column(db.BigInteger, db.ForeignKey("tpp_structural.id"), nullable=False)
+    id_kelas = db.Column(db.BigInteger, nullable=False)
+    id_cluster = db.Column(db.BigInteger, db.ForeignKey("tpp_cluster.id"), nullable=False)
+    cluster_name = db.Column(db.String(200), nullable=True)
+    asn = db.Column(db.Integer, default=0, nullable=True)
+
     beban_kerja = db.Column(db.DECIMAL(18, 2), default=0, nullable=True)
 
     # Kolom status dan prestasi
@@ -95,9 +100,9 @@ class tpp_kriteria_kerja(db.Model):
 
 #
 # # BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
-@event.listens_for(db.session, "do_orm_execute")
-def check_unit_privilege_read(orm_execute_state):
-    check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_kriteria_kerja)
+# @event.listens_for(db.session, "do_orm_execute")
+# def check_unit_privilege_read(orm_execute_state):
+#     check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_kriteria_kerja)
 
 
 # @event.listens_for(tpp_kriteria_kerja, 'before_insert')

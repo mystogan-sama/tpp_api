@@ -13,6 +13,7 @@ respAndPayloadFields = {
     "id_unitKerja": fields.Integer(example=20),
     "Id_JobLevel": fields.Integer(example=3),
     "id_kelas": fields.Integer(example=2),
+    "asn": fields.Integer(required=True, example=5),
     "jml_pemangku": fields.Integer(required=True, example=5),
     "bulan": fields.Integer(required=True, example=5),
     "basic_tpp": fields.Float(example=3000000.00),  # mssql.MONEY ditranslasikan ke float
@@ -44,10 +45,10 @@ respAndPayloadFields = {
     "total_bulan": fields.Fixed(required=False, example="", ),
     "total_tahun": fields.Fixed(required=False, example="", ),
 }
-uniqueField = ["code"]
+uniqueField = ["code", "id_jabatan"]
 searchField = ["code", "nama_jabatan"]
 sortField = ["id"]
-filterField = ["id", "id_unit"]
+filterField = ["id", "id_unit", "asn"]
 enabledPagination = False
 fileFields = []
 

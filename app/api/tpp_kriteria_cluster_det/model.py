@@ -21,7 +21,7 @@ class tpp_kriteria_cluster_det(db.Model):
     kriteria_nominal = db.Column(mssql.MONEY, default=0, nullable=True)
 
     # tpp_structural = db.relationship("tpp_structural", backref=modelName, lazy="dynamic")
-    kriteria = db.relationship("tpp_kriteria", foreign_keys=[id_kriteria], backref="cluster_details")
+    kriteria = db.relationship("tpp_kriteria", foreign_keys=[id_kriteria], backref="kriteria_cluster_details")
 
     @property
     def id_parent(self):

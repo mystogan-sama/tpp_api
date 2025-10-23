@@ -14,12 +14,13 @@ respAndPayloadFields = {
     'indeks': fields.Float(required=False, description='Harga dalam Rupiah'),
     "nilai_basic_tpp": fields.Fixed(required=False, example="", ),
     'indeks_tpp': fields.Float(required=False, description='Harga dalam Rupiah'),
+    "tahun": fields.Integer(required=False, example="", ),
 
 }
 uniqueField = [""]
 searchField = ["kelas"]
-sortField = [""]
-filterField = ["kelas"]
+sortField = ["kelas"]
+filterField = ["kelas", "tahun"]
 enabledPagination = False
 fileFields = []
 

@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.elements import Null
 from werkzeug.datastructures import FileStorage
+from werkzeug.utils import secure_filename
 
 from app import db
 from .extensions import cache
@@ -57,10 +58,8 @@ def setup_custom_logger():
 logger = setup_custom_logger()
 
 
-def message(status, msg, msg_html=None):
+def message(status, msg):
     response_object = {"status": status, "message": msg}
-    if msg_html:
-        response_object["message_html"] = msg_html
     return response_object
 
 
@@ -106,10 +105,8 @@ def err_resp(msg, reason, code):
     return err, code
 
 
-def error_response(msg, code, msg_html=None):
+def error_response(msg, code):
     err = {"status": False, "message": msg}
-    if msg_html:
-        err["message_html"] = msg_html
     return err, code
 
 
@@ -226,7 +223,7 @@ class NullableInteger(fields.Integer):
 
 def row2dict_same_api_res(self, restXModel):
     d = {}
-    commonFieldCurrency = ['nilai', 'pagu', 'harga', 'price', 'lalu', 'sekarang', 'priceIDR', 'price_IDR', 'priceRp',]
+    commonFieldCurrency = ['nilai', 'pagu', 'harga', 'price', 'lalu', 'sekarang']
     for c in self.__table__.columns:
         if c.name in restXModel.keys():
             columnName = c.name
@@ -242,19 +239,51 @@ def row2dict_same_api_res(self, restXModel):
             if isinstance(ob, decimal.Decimal) and columnName.lower() in commonFieldCurrency:
                 d[f'{columnName}_format'] = rupiah_format(ob)
             d[columnName] = formatResp(ob)
-
         # elif str(type(v)) == "<class 'sqlalchemy.orm.attributes.InstrumentedAttribute'>" and k in restXModel.keys():
         #     ob = getattr(self, columnName)
         #     d[columnName] = ob
     return d
 
 
+# def assetUploadDefReqData(request, modelName, current_user, id):
+#     return {
+#         "url": "assets_upload",
+#         "headers": {
+#             "Origin": os.environ.get('DOMAIN'),
+#             "Authorization": request.headers['Authorization']
+#         },
+#         "payload": {
+#             "callback_page": request.form.get("callback_page"),
+#             "storeName": request.form.get("storeName"),
+#             "origin_before": request.origin,
+#             "table_name": modelName,
+#             "table_id": id,
+#             "asset_title": modelName,
+#             "cloudinary_path": modelName,
+#             "id_user": current_user['id'],
+#             "files": []
+#         }
+#     }
+
+UPLOAD_FOLDER = "app/static/document"  # Folder penyimpanan file
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Pastikan folder tersedia
+
+
 def assetUploadDefReqData(request, modelName, current_user, id):
+    """ Mengelola upload file dan membangun payload untuk disimpan """
+    files = []
+
+    if 'files' in request.files:
+        for file in request.files.getlist('files'):  # Mendukung multiple file upload
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            file.save(filepath)  # Simpan file ke folder lokal
+            files.append(filepath)  # Simpan path ke list
+
     return {
-        "url": "assets_upload",
         "headers": {
             "Origin": os.environ.get('DOMAIN'),
-            "Authorization": request.headers['Authorization']
+            "Authorization": request.headers.get('Authorization', '')
         },
         "payload": {
             "callback_page": request.form.get("callback_page"),
@@ -263,9 +292,9 @@ def assetUploadDefReqData(request, modelName, current_user, id):
             "table_name": modelName,
             "table_id": id,
             "asset_title": modelName,
-            "cloudinary_path": modelName,
-            "id_user": current_user['id'] if current_user else None,
-            "files": []
+            "cloudinary_path": modelName,  # Bisa dihapus jika tidak digunakan
+            "id_user": current_user['id'],
+            "files": files  # Path file yang disimpan
         }
     }
 
@@ -633,9 +662,9 @@ def genFormArgs(respAndPayloadFields, fileFields):
     return argsParser
 
 
-def GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser, asData=None, args2=None):
+def GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser, asData=None):
     try:
-        args = args2 or parser.parse_args()
+        args = parser.parse_args()
         if enabledPagination:
             resultData = Service.getDataServerSide(args)
         else:
@@ -669,7 +698,7 @@ def GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Serv
                     newRow['checked'] = False
                     resultDataNew.append(newRow)
                 genRecrusive(sorted(resultDataNew,
-                                    key=lambda d: d[args['sort']] if args['sort'] else d['index'] if 'index' in d else d['code'] if 'code' in d else 0),
+                                    key=lambda d: d['index'] if 'index' in d else d['code'] if 'code' in d else 0),
                              root)
                 resultJson = root['children']
 
@@ -721,7 +750,44 @@ def GeneralPost(doc, crudTitle, Service, request, args=None, asData=False):
         return error_response(generateDefaultResponse(crudTitle, 'post', 500), 500)
 
 
-def GeneralDelete(crudTitle, Service, request, fileFields, modelName, current_user, internalApi_byUrl, asData=None):
+# def GeneralPost(doc, crudTitle, Service, request, args=None):
+#     try:
+#         if args:
+#             payLoad = args
+#         else:
+#             payLoad = request.get_json() or request.form
+#
+#         if isinstance(payLoad, dict):
+#             if Service.isExist(payLoad):
+#                 return error_response(generateDefaultResponse(crudTitle, 'post', 400), 400)
+#
+#         resultData = Service.addData(payLoad)
+#
+#         if not resultData:
+#             return error_response(generateDefaultResponse(crudTitle, 'post', 500), 500)
+#
+#         if isinstance(resultData, str):
+#             if 'you are not allowed to actions' in str(resultData):
+#                 return error_response(str(resultData), 403)
+#             else:
+#                 return error_response(generateDefaultResponse(crudTitle, 'post', 409), 409)
+#
+#         resp = message(True, generateDefaultResponse(crudTitle, 'post', 200))
+#         if isinstance(resultData, list):
+#             resultJsonMulti = []
+#             for row in resultData:
+#                 resultJsonMulti.append(row2dict_same_api_res(row, doc.default_data_response))
+#             resp["data"] = resultJsonMulti
+#         else:
+#             resultJson = row2dict_same_api_res(resultData, doc.default_data_response)
+#             resp["data"] = resultJson
+#         return resp, 200
+#     except Exception as e:
+#         logger.error(e)
+#         return error_response(generateDefaultResponse(crudTitle, 'post', 500), 500)
+
+
+def GeneralDelete(crudTitle, Service, request, fileFields, modelName, current_user, internalApi_byUrl):
     try:
         payload = request.get_json()
         if not payload['id']:
@@ -751,8 +817,6 @@ def GeneralDelete(crudTitle, Service, request, fileFields, modelName, current_us
 
         resp = message(True, generateDefaultResponse(crudTitle, 'delete', 200))
         resp["data"] = resultJson
-        if asData:
-            return resultJson
         return resp, 200
     except Exception as e:
         logger.error(e)
@@ -785,24 +849,63 @@ def GeneralGetById(id, doc, crudTitle, Service, asData=False):
         logger.error(e)
         return error_response(generateDefaultResponse(crudTitle, 'get', 500), 500)
 
+# def GeneralGetById(id, doc, crudTitle, Service):
+#     try:
+#         if not Service.isExist({'id': id}):
+#             return error_response(generateDefaultResponse(crudTitle, 'get', 404), 404)
+#         resultData = Service.getDataById(id)
+#         if resultData:
+#             resultJson = row2dict_same_api_res(resultData, doc.default_data_response)
+#             resp = message(True, generateDefaultResponse(crudTitle, 'get', 200))
+#             resp["data"] = resultJson
+#             return resp, 200
+#         elif len(resultData) == 0:
+#             resp = message(True, generateDefaultResponse(crudTitle, 'get', 200))
+#             resp["data"] = {}
+#             return resp, 200
+#         else:
+#             return error_response(generateDefaultResponse(crudTitle, 'get', 500), 500)
+#     except Exception as e:
+#         logger.error(e)
+#         return error_response(generateDefaultResponse(crudTitle, 'get', 500), 500)
 
-def GeneralPutById(id, doc, crudTitle, Service, request, modelName, current_user, fileFields, internalApi_byUrl, asData=False, asData2=False):
+
+import os
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = "app/static/document"
+
+
+def generate_unique_filename(folder, filename):
+    """
+    Fungsi ini mengecek apakah file dengan nama yang sama sudah ada di folder,
+    jika ada, akan menambahkan angka pada nama file (misal: file-1, file-2, dst)
+    """
+    base, extension = os.path.splitext(filename)
+    counter = 1
+    new_filename = filename
+
+    while os.path.exists(os.path.join(folder, new_filename)):
+        new_filename = f"{base}-{counter}{extension}"
+        counter += 1
+
+    return new_filename
+
+
+def GeneralPutById(id, doc, crudTitle, Service, request, modelName, current_user, fileFields, internalApi_byUrl):
     try:
         jsonPayload = True if 'application/json' in request.content_type else False
-
         payload = request.get_json() if jsonPayload else request.files
 
         existData = Service.isExist({'id': id})
         if not existData:
-            if asData:
-                return {}
             return error_response(generateDefaultResponse(crudTitle, 'put', 404), 404)
-        oldData = row2dict(existData)
 
+        oldData = row2dict(existData)
         dataToTask = assetUploadDefReqData(request, modelName, current_user, id)
 
         resultJson = []
-        resultData = None
+
         if jsonPayload:
             fileParse = []
             for row in payload.keys():
@@ -813,9 +916,8 @@ def GeneralPutById(id, doc, crudTitle, Service, request, modelName, current_user
             if len(fileParse) > 0:
                 dataToTask['payload']["files"] = fileParse
                 thread = Thread(target=internalApi_byUrl, args=(dataToTask, sso_url, "put",))
-                # thread.daemon = True
                 thread.start()
-                # thread.join()
+
             resultData = Service.updateData(id, payload)
             if not resultData:
                 return error_response(generateDefaultResponse(crudTitle, 'put', 500), 500)
@@ -829,30 +931,107 @@ def GeneralPutById(id, doc, crudTitle, Service, request, modelName, current_user
             resultJson = row2dict_same_api_res(resultData, doc.default_data_response)
         else:
             if payload:
-                fileParse = []
+                fileUrls = {}
                 for key in payload.keys():
-                    fileParse.append((key, (payload[key].filename, payload[key].read(), payload[key].content_type)))
+                    file = payload[key]
+                    if file:
+                        filename = secure_filename(file.filename)
 
-                if len(fileParse) > 0:
-                    dataToTask["files"] = fileParse
-                    thread = Thread(target=internalApi_byUrl, args=(dataToTask, currentAppUrl,))
-                    # thread.daemon = True
-                    thread.start()
-                    # thread.join()
+                        # Tentukan folder tempat menyimpan file
+                        folder_path = os.path.join(UPLOAD_FOLDER)
+
+                        # Pastikan folder ada
+                        if not os.path.exists(folder_path):
+                            os.makedirs(folder_path)
+
+                        # Dapatkan nama file yang unik
+                        unique_filename = generate_unique_filename(folder_path, filename)
+
+                        # Simpan file dengan nama yang unik
+                        file_path = os.path.join(folder_path, unique_filename)
+                        file.save(file_path)
+
+                        # Generate URL file untuk file yang telah disimpan
+                        file_url = f"{request.host_url}static/document/{unique_filename}"
+                        fileUrls[key] = file_url
+
+                # Update database dengan URL file
+                if fileUrls:
+                    Service.updateData(id, fileUrls)
+
         resp = message(True, generateDefaultResponse(crudTitle, 'put', 200))
         resp["data"] = resultJson
-        if asData:
-            return resultJson
-        if asData2:
-            return resultData
         return resp, 200
+
     except Exception as e:
-        print('ValueError')
+        print('Error:', e)
         logger.error(e)
         return error_response(generateDefaultResponse(crudTitle, 'put', 500), 500)
 
 
-def GeneralDeleteById(id, doc, crudTitle, Service, request, modelName, current_user, fileFields, internalApi_byUrl, asData=None):
+# def GeneralPutById(id, doc, crudTitle, Service, request, modelName, current_user, fileFields, internalApi_byUrl):
+#     try:
+#         jsonPayload = True if 'application/json' in request.content_type else False
+#
+#         payload = request.get_json() if jsonPayload else request.files
+#
+#         existData = Service.isExist({'id': id})
+#         if not existData:
+#             return error_response(generateDefaultResponse(crudTitle, 'put', 404), 404)
+#         oldData = row2dict(existData)
+#
+#         dataToTask = assetUploadDefReqData(request, modelName, current_user, id)
+#
+#         resultJson = []
+#         if jsonPayload:
+#             fileParse = []
+#             for row in payload.keys():
+#                 if row in fileFields and payload[row] is None:
+#                     filename = oldData[row].split("/")[-1]
+#                     fileParse.append(filename)
+#
+#             if len(fileParse) > 0:
+#                 dataToTask['payload']["files"] = fileParse
+#                 thread = Thread(target=internalApi_byUrl, args=(dataToTask, sso_url, "put",))
+#                 # thread.daemon = True
+#                 thread.start()
+#                 # thread.join()
+#
+#             resultData = Service.updateData(id, payload)
+#
+#             if not resultData:
+#                 return error_response(generateDefaultResponse(crudTitle, 'put', 500), 500)
+#
+#             if isinstance(resultData, str):
+#                 if 'you are not allowed to actions' in str(resultData):
+#                     return error_response(str(resultData), 403)
+#                 else:
+#                     return error_response(generateDefaultResponse(crudTitle, 'put', 409), 409)
+#
+#             resultJson = row2dict_same_api_res(resultData, doc.default_data_response)
+#         else:
+#             if payload:
+#                 fileParse = []
+#                 for key in payload.keys():
+#                     fileParse.append((key, (payload[key].filename, payload[key].read(), payload[key].content_type)))
+#
+#                 if len(fileParse) > 0:
+#                     dataToTask["files"] = fileParse
+#                     thread = Thread(target=internalApi_byUrl, args=(dataToTask, currentAppUrl,))
+#                     # thread.daemon = True
+#                     thread.start()
+#                     # thread.join()
+#
+#         resp = message(True, generateDefaultResponse(crudTitle, 'put', 200))
+#         resp["data"] = resultJson
+#         return resp, 200
+#     except Exception as e:
+#         print('ValueError')
+#         logger.error(e)
+#         return error_response(generateDefaultResponse(crudTitle, 'put', 500), 500)
+
+
+def GeneralDeleteById(id, doc, crudTitle, Service, request, modelName, current_user, fileFields, internalApi_byUrl):
     try:
         if not (oldData := Service.isExist({'id': id})):
             return error_response(generateDefaultResponse(crudTitle, 'delete', 404), 404)
@@ -876,8 +1055,6 @@ def GeneralDeleteById(id, doc, crudTitle, Service, request, modelName, current_u
 
         resp = message(True, generateDefaultResponse(crudTitle, 'delete', 200))
         resp["data"] = resultData
-        if asData:
-            return resultData
         return resp, 200
     except Exception as e:
         logger.error(e)
@@ -917,9 +1094,8 @@ def GeneralIsExistOnDb(uniqueField, model, data):
 #         result = [total_data]
 #         return result
 #     except Exception as error:
-#         logger.error(error)
+#         current_app.logger.error(error)
 #         return None
-
 
 def GeneralGetDataAll(respAndPayloadFields, model, current_app, args, filterField, sortField=None):
     try:
@@ -1036,6 +1212,48 @@ def GeneralGetDataAll(respAndPayloadFields, model, current_app, args, filterFiel
         return None
 
 
+# def GeneralGetDataAll(respAndPayloadFields, model, current_app, args, filterField):
+#     try:
+#         select_query = model.query
+#
+#         # USER FILTERS
+#         filters = {}
+#         for var in filterField:
+#             column = var
+#             if ':' in var:
+#                 column = var.split(":")[2] if len(var.split(":")) > 2 else var.split(":")[0]
+#                 operator = var.split(":")[1]
+#                 dbColumn = var.split(":")[0]
+#                 if column in args and args[column] and column in respAndPayloadFields:
+#                     # print(column, dbColumn, operator, args[column])
+#                     if operator == "<=":
+#                         select_query = select_query.filter(
+#                             getattr(model, dbColumn) <= args[column]
+#                         )
+#                     elif operator == ">=":
+#                         select_query = select_query.filter(
+#                             getattr(model, dbColumn) >= args[column]
+#                         )
+#             else:
+#                 if column in args and args[column] and column in respAndPayloadFields:
+#                     filters[column] = args[column]
+#
+#         if len(filters) > 0:
+#             select_query = select_query.filter_by(**filters)
+#
+#         if 'index' in respAndPayloadFields:
+#             select_query = select_query.order_by(model.index).all()
+#         elif 'code' in respAndPayloadFields:
+#             select_query = select_query.order_by(model.code).all()
+#         else:
+#             select_query = select_query.order_by(model.id.desc()).all()
+#
+#         return select_query
+#     except Exception as error:
+#         current_app.logger.error(error)
+#         return None
+
+
 def GeneralGetDataServerSide(model, searchField, respAndPayloadFields, sortField, db, current_app, args, filterField):
     # print(args)
     try:
@@ -1075,14 +1293,13 @@ def GeneralGetDataServerSide(model, searchField, respAndPayloadFields, sortField
                             getattr(model, dbColumn) >= args[column]
                         )
                     elif operator == "boolean":
-                        print(args[column] )
                         if args[column] == "true":
                             select_query = select_query.filter(
-                                getattr(model, dbColumn) is not None
+                                getattr(model, dbColumn) != None
                             )
                         else:
                             select_query = select_query.filter(
-                                getattr(model, dbColumn) is None
+                                getattr(model, dbColumn) == None
                             )
             else:
                 if column in args and args[column] and column in respAndPayloadFields:
@@ -1160,7 +1377,7 @@ def GeneralGetDataServerSide(model, searchField, respAndPayloadFields, sortField
         query_execute = select_query.paginate(page, lengthLimit, error_out=False)
         return query_execute
     except Exception as error:
-        logger.error(error)
+        current_app.logger.error(error)
         return None
 
 
@@ -1171,22 +1388,21 @@ def GeneralGetDataById(id, model, current_app):
             return []
         return data
     except Exception as error:
-        logger.error(error)
+        current_app.logger.error(error)
         return None
 
 
 def GeneralAddData(data, db, model, current_app):
     try:
-        # print(data)
         if isinstance(data, list):
             resultMulti = []
-            # print(data)
             for row in data:
                 newRow = model(**row)
                 db.session.add(newRow)
-                db.session.commit()
+                db.session.flush()
                 if newRow.id:
                     resultMulti.append(newRow)
+            db.session.commit()
             return resultMulti
         else:
             newRecord = model(**data)
@@ -1199,15 +1415,15 @@ def GeneralAddData(data, db, model, current_app):
     except IntegrityError as error:
         print("Duplicate Data!")
         db.session.rollback()
-        logger.error(error)
+        current_app.logger.error(error)
         return "Duplicate Data!"
     except ValueError as error:
         db.session.rollback()
-        logger.error(error)
+        current_app.logger.error(error)
         return str(error)
     except Exception as error:
         db.session.rollback()
-        logger.error(error)
+        current_app.logger.error(error)
         return None
 
 
@@ -1223,7 +1439,7 @@ def GeneralUpdateData(id, data, model, db, current_app):
         return existData
     except Exception as error:
         db.session.rollback()
-        logger.error(error)
+        current_app.logger.error(error)
         return None
 
 
@@ -1237,7 +1453,7 @@ def GeneralDeleteData(id, model, db, current_app, doc):
         return resultJson
     except Exception as error:
         db.session.rollback()
-        logger.error(error)
+        current_app.logger.error(error)
         return None
 
 
@@ -1256,7 +1472,7 @@ def GeneraldeleteMultipleData(ids, model, db, current_app, doc):
         return oldDataJson
     except Exception as error:
         db.session.rollback()
-        logger.error(error)
+        current_app.logger.error(error)
         return None
 
 
@@ -1517,34 +1733,17 @@ def clear_sipd_sp2d_cache(key_to_remove):
         cache.delete(key)
     print(f"Cleared {len(keys_to_delete)} cache keys with prefix '{key_to_remove}'")
 
-def get_session_sipd_to_globaldata(id_user, request_headers):
-    headers = {
-        "Authorization": request_headers.get("Authorization"),
-        "Origin": request_headers.get("Origin")
-    }
-    try:
-        url = f"https://globaldata-api.insaba.co.id/sipd_accounts/{id_user}"
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-
-        responseJson = response.json()
-        data = responseJson.get("data")
-        return data
-
-    except Exception as error:
-        logger.error(f"{error}")
-
-def get_default_headers_sipd(id_user=None, with_auth=True, request_headers={}):
+def get_default_headers_sipd(id_user=None, with_auth=True):
     if with_auth and id_user:
-        # from .api.sp2dol_setting.model import Sp2dol_setting
-        #
-        # setting_data = Sp2dol_setting.query.filter_by(id=id_user).first()
-        setting_data = get_session_sipd_to_globaldata(id_user, request_headers)
+        from .api.sipdSetting.model import sipdSetting
+
+        setting_data = sipdSetting.query.filter_by(id=id_user).first()
+
         if not setting_data:
             return None
 
-        token_from_db = setting_data.get("token")
-        sipd_tahun = setting_data.get("sipd_tahun")
+        token_from_db = setting_data.token
+        sipd_tahun = setting_data.sipd_tahun
         return {"headers": {
             "Origin": "https://sipd.kemendagri.go.id",
             "Authorization": f"Bearer {token_from_db}"

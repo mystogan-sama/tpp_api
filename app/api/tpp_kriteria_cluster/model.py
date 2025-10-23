@@ -23,9 +23,9 @@ class tpp_kriteria_cluster(db.Model):
         return f"{self.tpp_cluster.name}" if self.tpp_cluster else None
 
 # BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
-@event.listens_for(db.session, "do_orm_execute")
-def check_unit_privilege_read(orm_execute_state):
-    check_unit_privilege_on_read_db(orm_execute_state, tpp_kriteria_cluster)
+# @event.listens_for(db.session, "do_orm_execute")
+# def check_unit_privilege_read(orm_execute_state):
+#     check_unit_privilege_on_read_db(orm_execute_state, tpp_kriteria_cluster)
 #
 # @event.listens_for(tpp_kriteria_cluster, 'before_insert')
 # def check_unit_privilege_insert(mapper, connection, target):

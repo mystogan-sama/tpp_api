@@ -6,14 +6,15 @@ apiPath = 'tpp_unitKerja'
 modelName = 'tpp_unitKerja'
 respAndPayloadFields = {
     "id": fields.Integer(readonly=True, example=1, ),
+    "id_unit": fields.Integer(required=True, example=1, ),
     "name": fields.String(required=True, min_length=5, max_length=200, ),
     "description": fields.String(required=False, min_length=5, max_length=512, ),
     "eselon_level": fields.Integer(required=True, example=1, ),
 }
 uniqueField = []
 searchField = ["name"]
-sortField = []
-filterField = []
+sortField = ["id"]
+filterField = ["id_unit"]
 enabledPagination = False
 fileFields = []
 

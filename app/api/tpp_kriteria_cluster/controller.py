@@ -7,7 +7,10 @@ from app.utils import GeneralGetList, \
 from . import crudTitle, enabledPagination, respAndPayloadFields, fileFields, modelName, filterField
 from .doc import doc
 from .service import Service
-from ... import internalApi_byUrl
+from ..tpp_cluster.model import tpp_cluster
+from ..tpp_cluster_det.model import tpp_cluster_det
+from ..tpp_kriteria_cluster_det.model import tpp_kriteria_cluster_det
+from ... import internalApi_byUrl, db
 from ...sso_helper import token_required, current_user
 
 api = doc.api
@@ -42,10 +45,50 @@ class List(Resource):
 
     #### POST SINGLE/MULTIPLE
     @doc.postRespDoc
-    @api.expect(doc.default_data_response, validate=True)
+    # @api.expect(doc.default_data_response, validate=True)
     @token_required
     def post(self):
-        return GeneralPost(doc, crudTitle, Service, request)
+        payload = request.get_json()
+        print(payload)
+
+        id_cluster = payload['id_cluster']
+
+        # 🔍 Ambil ID Kriteria Cluster berdasarkan ID Unit
+        cluster = db.session.query(tpp_cluster).filter_by(id=id_cluster).first()
+        if not cluster:
+            return {"status": False, "message": "Kriteria cluster tidak ditemukan"}, 404
+
+        cluster_id = cluster.id
+
+        # 🔍 Ambil semua detail kriteria dari cluster
+        cluster_dets = db.session.query(tpp_cluster_det).filter_by(
+            id_cluster=cluster_id).all()
+        if not cluster_dets:
+            return {"status": False, "message": "Tidak ada detail kriteria ditemukan"}, 404
+
+        # ✅ Simpan ke tpp_kriteria_kerja (master) terlebih dahulu
+        result_post = GeneralPost(doc, crudTitle, Service, request)
+
+        # Pastikan penyimpanan berhasil, dan ambil ID hasil insert
+        if not result_post[1] == 200 or not result_post[0].get("data", {}).get("id"):
+            return {"status": False, "message": "Gagal menyimpan data kriteria kerja"}, 500
+
+        id_kriteriaCluster = result_post[0]["data"]["id"]
+
+        # 🔁 Simpan semua detail dari cluster ke tpp_kriteria_kerja_det
+        for det in cluster_dets:
+            cluster_det = tpp_kriteria_cluster_det(
+                id_kriteriaCluster=id_kriteriaCluster,
+                id_kriteria=det.id_kriteria,
+                kriteria_name=det.kriteria_name,
+                kriteria_formula=det.kriteria_formula
+            )
+            db.session.add(cluster_det)
+
+        db.session.commit()
+
+        return result_post
+        # return GeneralPost(doc, crudTitle, Service, request)
 
     #### MULTIPLE-DELETE
     @doc.deleteMultiRespDoc

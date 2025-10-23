@@ -44,12 +44,13 @@ respAndPayloadFields = {
     "nilai_ippd": fields.Float(readonly=True, example=612.1),
     "indeks_tpp": fields.Float(readonly=True, example=612.1),
     "created_date": fields.DateTime(required=False, example="2024-03-26 10:19", ),
+    "tahun": fields.Integer(required=False, example=78.5, description='Bobot 25%'),
 
 }
 uniqueField = [""]
 searchField = ["kelas"]
 sortField = [""]
-filterField = ["kelas"]
+filterField = ["kelas", "tahun"]
 enabledPagination = False
 fileFields = []
 

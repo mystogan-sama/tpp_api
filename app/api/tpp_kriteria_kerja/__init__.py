@@ -12,6 +12,10 @@ respAndPayloadFields = {
     "id_unit": fields.Integer(required=True, example=1001),
     "unit_name": fields.String(example="", ),
     "id_structural": fields.Integer(required=True, example=2001),
+    "id_kelas": fields.Integer(required=True, example=2001),
+    "id_cluster": fields.Integer(required=True, example=2001),
+    "cluster_name": fields.String(example="", ),
+    "asn": fields.Integer(required=False, example=1),
 
     # Beban kerja
     "beban_kerja": fields.Float(required=False, example=40),
@@ -69,8 +73,8 @@ respAndPayloadFields = {
 }
 uniqueField = [""]
 searchField = ["id_unit"]
-sortField = [""]
-filterField = ["id_unit"]
+sortField = ["id_kelas"]
+filterField = ["id_unit", "id_kriteriaKerja", "detail", "id_cluster"]
 enabledPagination = False
 fileFields = []
 

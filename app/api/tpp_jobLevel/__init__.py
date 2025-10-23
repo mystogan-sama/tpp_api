@@ -11,7 +11,7 @@ respAndPayloadFields = {
 }
 uniqueField = ["name"]
 searchField = ["name"]
-sortField = []
+sortField = ["id"]
 filterField = []
 enabledPagination = False
 fileFields = []

@@ -46,6 +46,7 @@ class tpp_indeks(db.Model):
     nilai_ippd = db.Column(db.DECIMAL(18, 3), default=0, nullable=True)
     indeks_tpp = db.Column(db.DECIMAL(18, 9), default=0, nullable=True)
     created_date = db.Column(db.DateTime, default=datetime.now, nullable=True)
+    tahun = db.Column(db.Integer, nullable=False, index=True)
 
 
     # tpp_structural = db.relationship("tpp_structural", backref=modelName, lazy="dynamic")

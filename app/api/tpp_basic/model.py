@@ -17,6 +17,7 @@ class tpp_basic(db.Model):
     kelas = db.Column(db.Integer, nullable=False, index=True)
     bpk_ri = db.Column(mssql.MONEY, nullable=True)
     indeks = db.Column(db.DECIMAL(16, 15), default=0, nullable=True)
+    tahun = db.Column(db.Integer, nullable=False, index=True)
 
     tpp_structural = db.relationship("tpp_structural", backref=modelName, lazy="dynamic")
 

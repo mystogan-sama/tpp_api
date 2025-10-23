@@ -22,6 +22,7 @@ class tpp_structural(db.Model):
     code = db.Column(db.String(100), nullable=False, unique=True)
     name = db.Column(db.String(512), nullable=False, index=True)
     description = db.Column(db.String(512), nullable=True)
+    penyetaraan = db.Column(db.Integer, nullable=True)
     attributes = db.Column(db.JSON, nullable=True, server_default='{}')
     id_unitKerja = db.Column(db.BigInteger, db.ForeignKey("tpp_unitKerja.id"), nullable=True)
     Id_JobLevel = db.Column(db.BigInteger, db.ForeignKey("tpp_jobLevel.id"), nullable=True)
@@ -53,221 +54,221 @@ class tpp_structural(db.Model):
     #         return float(self.tpp_basic.bpk_ri) * float(self.tpp_basic.indeks)
     #     return None
 
-    @property
-    def indeks_tpp(self):
-        # Ambil tahun saat ini
-        tahun_sekarang = datetime.now().year
-
-        # Ambil 1 baris data indeks_tpp yang dibuat di tahun saat ini
-        indeks = db.session.query(tpp_indeks.indeks_tpp).filter(
-            extract('year', tpp_indeks.created_date) == tahun_sekarang
-        ).order_by(tpp_indeks.created_date.desc()).first()  # opsional, ambil yang terbaru
-
-        return float(indeks[0]) if indeks else None
-
-    @property
-    def bpk_ri(self):
-        return f"{self.tpp_basic.bpk_ri}" if self.tpp_basic else None
-
-    @property
-    def beban_kerja(self):
-        """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("1."):
-                    try:
-                        total += Decimal(detail.kriteria_formula or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    @property
-    def beban_kerja_persen(self):
-        return (self.beban_kerja / Decimal(100))
-
-    @property
-    def nominal_beban_kerja(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("1."):
-                    try:
-                        total += Decimal(detail.kriteria_nominal or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    ### Prestasi Kerja
-    @property
-    def prestasi_kerja(self):
-        """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("2."):
-                    try:
-                        total += Decimal(detail.kriteria_formula or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    @property
-    def prestasi_kerja_persen(self):
-        return (self.prestasi_kerja / Decimal(100))
-
-    @property
-    def nominal_prestasi_kerja(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("2."):
-                    try:
-                        total += Decimal(detail.kriteria_nominal or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    ### Kondisi Kerja
-    @property
-    def kondisi_kerja(self):
-        """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("3."):
-                    try:
-                        total += Decimal(detail.kriteria_formula or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    @property
-    def kondisi_kerja_persen(self):
-        return (self.kondisi_kerja / Decimal(100))
-
-    @property
-    def nominal_kondisi_kerja(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("3."):
-                    try:
-                        total += Decimal(detail.kriteria_nominal or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    ### Tempat Bekerja
-    @property
-    def tempat_bekerja(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("4."):
-                    try:
-                        total += Decimal(detail.kriteria_formula or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    @property
-    def tempat_bekerja_persen(self):
-        return (self.tempat_bekerja / Decimal(100))
-
-    @property
-    def nominal_tempat_bekerja(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("4."):
-                    try:
-                        total += Decimal(detail.kriteria_nominal or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    ### Kelangkaan Profesi
-    @property
-    def kelangkaan_profesi(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("5."):
-                    try:
-                        total += Decimal(detail.kriteria_formula or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    @property
-    def kelangkaan_profesi_persen(self):
-        return (self.kelangkaan_profesi / Decimal(100))
-
-    @property
-    def nominal_kelangkaan_profesi(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("5."):
-                    try:
-                        total += Decimal(detail.kriteria_nominal or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    ## Pertimbangan Objektif Lainnya
-    @property
-    def pertimbangan_objektif_lainnya(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("6."):
-                    try:
-                        total += Decimal(detail.kriteria_formula or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
-
-    @property
-    def pertimbangan_objektif_lainnya_persen(self):
-        return (self.pertimbangan_objektif_lainnya / Decimal(100))
-
-    @property
-    def nominal_pertimbangan_objektif_lainnya(self):
-        total = Decimal('0.00')
-
-        for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
-            for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
-                if detail.kriteria and detail.kriteria.code.startswith("6."):
-                    try:
-                        total += Decimal(detail.kriteria_nominal or 0)
-                    except:
-                        continue
-
-        return total.quantize(Decimal('0.00'))
+    # @property
+    # def indeks_tpp(self):
+    #     # Ambil tahun saat ini
+    #     tahun_sekarang = datetime.now().year
+    #
+    #     # Ambil 1 baris data indeks_tpp yang dibuat di tahun saat ini
+    #     indeks = db.session.query(tpp_indeks.indeks_tpp).filter(
+    #         extract('year', tpp_indeks.created_date) == tahun_sekarang
+    #     ).order_by(tpp_indeks.created_date.desc()).first()  # opsional, ambil yang terbaru
+    #
+    #     return float(indeks[0]) if indeks else None
+    #
+    # @property
+    # def bpk_ri(self):
+    #     return f"{self.tpp_basic.bpk_ri}" if self.tpp_basic else None
+    #
+    # @property
+    # def beban_kerja(self):
+    #     """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("1."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_formula or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # @property
+    # def beban_kerja_persen(self):
+    #     return (self.beban_kerja / Decimal(100))
+    #
+    # @property
+    # def nominal_beban_kerja(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("1."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_nominal or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # ### Prestasi Kerja
+    # @property
+    # def prestasi_kerja(self):
+    #     """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("2."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_formula or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # @property
+    # def prestasi_kerja_persen(self):
+    #     return (self.prestasi_kerja / Decimal(100))
+    #
+    # @property
+    # def nominal_prestasi_kerja(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("2."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_nominal or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # ### Kondisi Kerja
+    # @property
+    # def kondisi_kerja(self):
+    #     """Mengembalikan total beban kerja dari kriteria dengan code LIKE '1.%'"""
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("3."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_formula or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # @property
+    # def kondisi_kerja_persen(self):
+    #     return (self.kondisi_kerja / Decimal(100))
+    #
+    # @property
+    # def nominal_kondisi_kerja(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("3."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_nominal or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # ### Tempat Bekerja
+    # @property
+    # def tempat_bekerja(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("4."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_formula or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # @property
+    # def tempat_bekerja_persen(self):
+    #     return (self.tempat_bekerja / Decimal(100))
+    #
+    # @property
+    # def nominal_tempat_bekerja(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("4."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_nominal or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # ### Kelangkaan Profesi
+    # @property
+    # def kelangkaan_profesi(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("5."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_formula or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # @property
+    # def kelangkaan_profesi_persen(self):
+    #     return (self.kelangkaan_profesi / Decimal(100))
+    #
+    # @property
+    # def nominal_kelangkaan_profesi(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("5."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_nominal or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # ## Pertimbangan Objektif Lainnya
+    # @property
+    # def pertimbangan_objektif_lainnya(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("6."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_formula or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
+    #
+    # @property
+    # def pertimbangan_objektif_lainnya_persen(self):
+    #     return (self.pertimbangan_objektif_lainnya / Decimal(100))
+    #
+    # @property
+    # def nominal_pertimbangan_objektif_lainnya(self):
+    #     total = Decimal('0.00')
+    #
+    #     for kerja in self.tpp_kriteria_kerja:  # kerja_list: relasi ke tpp_kriteria_kerja
+    #         for detail in kerja.kerja_details:  # kerja_details: relasi ke tpp_kriteria_kerja_det
+    #             if detail.kriteria and detail.kriteria.code.startswith("6."):
+    #                 try:
+    #                     total += Decimal(detail.kriteria_nominal or 0)
+    #                 except:
+    #                     continue
+    #
+    #     return total.quantize(Decimal('0.00'))
 
 
     # @property
@@ -336,9 +337,9 @@ class tpp_structural(db.Model):
     #     return total.quantize(Decimal('0.00'))
 #
 # BEFORE TRANSACTION: CHECK PRIVILEGE UNIT
-@event.listens_for(db.session, "do_orm_execute")
-def check_unit_privilege_read(orm_execute_state):
-    check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_structural)
+# @event.listens_for(db.session, "do_orm_execute")
+# def check_unit_privilege_read(orm_execute_state):
+#     check_unit_and_employee_privilege_on_read_db(orm_execute_state, tpp_structural)
 
 
 # # BEFORE INSERT ADD ID UNIT
