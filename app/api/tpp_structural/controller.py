@@ -136,6 +136,74 @@ class List(Resource):
             resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
             resp['data'] = a
             return resp, 200
+
+        elif args.get("struktur") == '2' and args.get('id_unitKerja') and args.get('level'):
+            id_unitKerja = args.get('id_unitKerja')
+            level = int(args.get('level', 1))
+
+            print(f"Level diterima: {level}, ID UnitKerja: {id_unitKerja}")
+
+            # Level satu tingkat di atas
+            level_atas = max(level - 1, 1)
+
+            # Query pertama
+            sqlQuery = text('''
+                SELECT *
+                FROM tpp_structural
+                WHERE id_unitKerja = :id_unitKerja
+                  AND CAST(level AS CHAR) = :level_atas
+            ''')
+
+            data = db.engine.execute(sqlQuery, {
+                'id_unitKerja': id_unitKerja,
+                'level_atas': str(level_atas)
+            })
+
+            a = []
+            for rowproxy in data:
+                d = {}
+                for column, value in rowproxy.items():
+                    if isinstance(value, datetime):
+                        d[column] = value.isoformat()
+                    elif isinstance(value, decimal.Decimal):
+                        d[column] = float(value)
+                    else:
+                        d[column] = value
+                a.append(d)
+
+            # Jika kosong, coba dua level di atas
+            if not a:
+                level_dua_atas = max(level - 2, 1)
+                print(f"Tidak ditemukan di level {level_atas}, coba cari di level {level_dua_atas}")
+
+                sqlQuery2 = text('''
+                    SELECT *
+                    FROM tpp_structural
+                    WHERE id_unitKerja = :id_unitKerja
+                      AND CAST(level AS CHAR) = :level_dua_atas
+                ''')
+
+                data2 = db.engine.execute(sqlQuery2, {
+                    'id_unitKerja': id_unitKerja,
+                    'level_dua_atas': str(level_dua_atas)
+                })
+
+                for rowproxy in data2:
+                    d = {}
+                    for column, value in rowproxy.items():
+                        if isinstance(value, datetime):
+                            d[column] = value.isoformat()
+                        elif isinstance(value, decimal.Decimal):
+                            d[column] = float(value)
+                        else:
+                            d[column] = value
+                    a.append(d)
+
+            print("Jumlah hasil ditemukan:", len(a))
+
+            resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
+            resp['data'] = a
+            return resp, 200
         else:
             return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser)
         # return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, args, asData=True)

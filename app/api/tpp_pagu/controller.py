@@ -93,14 +93,17 @@ class List(Resource):
 
             # Ambil semua record dengan id_unit yang sama
             existing_records = tpp_pagu.query.filter_by(id_unit=id_unit).all()
-            existing_asn_values = [r.asn for r in existing_records]
+            existing_asn_values = [int(r.asn) for r in existing_records]
 
-            if set(existing_asn_values) == {0, 1}:
+            # Validasi jika sudah ada data dengan ASN yang sama
+            if int(asn) in existing_asn_values:
+                asn_label = "PNS" if int(asn) == 1 else "PPPK"
                 unit_name = existing_records[0].unit_name if existing_records else id_unit
                 return {
-                    "message": f"Tidak dapat menambah data. Pagu untuk PNS dan PPPK pada SKPD '{unit_name}' sudah terdaftar."
+                    "message": f"Tidak dapat menambah data. Pagu untuk {asn_label} pada SKPD '{unit_name}' sudah terdaftar."
                 }, 400
 
+            # Jika belum ada data ASN tersebut, lanjut simpan
             return GeneralPost(doc, crudTitle, Service, request)
 
         except Exception as e:

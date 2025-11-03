@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
 import requests
-from flask import request
+from flask import request, current_app
 from flask_restx import Resource, reqparse, inputs
 
 from app.utils import GeneralGetList, \
@@ -163,3 +163,75 @@ class ById(Resource):
     def delete(self, id):
         return GeneralDeleteById(id, doc, crudTitle, Service, request, modelName, current_user, fileFields,
                                  internalApi_byUrl)
+
+@api.route("/summary")
+class Summary(Resource):
+    @doc.getSummaryRespDoc
+    @token_required
+    def get(self):
+        try:
+            current_app.logger.info("Memanggil Service.getSummary()")
+            resultData = Service.getSummary({})
+
+            resp = message(True, generateDefaultResponse(crudTitle, 'get-sum', 200))
+            # pastikan selalu list
+            resp['data'] = [resultData] if isinstance(resultData, dict) else (resultData or [])
+            return resp, 200
+
+        except Exception as e:
+            current_app.logger.error(f"Error in Summary GET: {e}")
+            return error_response(generateDefaultResponse(crudTitle, 'get-sum', 500), 500)
+
+@api.route("/summaryP3K")
+class Summary(Resource):
+    @doc.getSummaryRespDoc
+    @token_required
+    def get(self):
+        try:
+            current_app.logger.info("Memanggil Service.getSummary()")
+            resultData = Service.getSummaryP3K({})
+
+            resp = message(True, generateDefaultResponse(crudTitle, 'get-sum', 200))
+            # pastikan selalu list
+            resp['data'] = [resultData] if isinstance(resultData, dict) else (resultData or [])
+            return resp, 200
+
+        except Exception as e:
+            current_app.logger.error(f"Error in Summary GET: {e}")
+            return error_response(generateDefaultResponse(crudTitle, 'get-sum', 500), 500)
+
+@api.route("/summaryKriteriaPNS")
+class Summary(Resource):
+    @doc.getSummaryRespDoc
+    @token_required
+    def get(self):
+        try:
+            current_app.logger.info("Memanggil Service.getSummary()")
+            resultData = Service.getSummaryKriteriaPNS({})
+
+            resp = message(True, generateDefaultResponse(crudTitle, 'get-sum', 200))
+            # pastikan selalu list
+            resp['data'] = [resultData] if isinstance(resultData, dict) else (resultData or [])
+            return resp, 200
+
+        except Exception as e:
+            current_app.logger.error(f"Error in Summary GET: {e}")
+            return error_response(generateDefaultResponse(crudTitle, 'get-sum', 500), 500)
+
+@api.route("/summaryKriteriaP3K")
+class Summary(Resource):
+    @doc.getSummaryRespDoc
+    @token_required
+    def get(self):
+        try:
+            current_app.logger.info("Memanggil Service.getSummary()")
+            resultData = Service.getSummaryKriteriaP3K({})
+
+            resp = message(True, generateDefaultResponse(crudTitle, 'get-sum', 200))
+            # pastikan selalu list
+            resp['data'] = [resultData] if isinstance(resultData, dict) else (resultData or [])
+            return resp, 200
+
+        except Exception as e:
+            current_app.logger.error(f"Error in Summary GET: {e}")
+            return error_response(generateDefaultResponse(crudTitle, 'get-sum', 500), 500)

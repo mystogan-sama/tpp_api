@@ -22,6 +22,7 @@ from app.utils import GeneralGetList, \
     error_response, DateTimeEncoder, logger
 from . import crudTitle, enabledPagination, respAndPayloadFields, fileFields, modelName, filterField
 from .doc import doc
+from .model import tpp_kriteria_kerja
 from .service import Service
 from ..tpp_cluster.model import tpp_cluster
 from ..tpp_cluster_det.model import tpp_cluster_det
@@ -190,46 +191,65 @@ class List(Resource):
     # @api.expect(doc.default_data_response, validate=True)
     @token_required
     def post(self):
-        payload = request.get_json()
-        print(payload)
+        try:
+            payload = request.get_json()
+            print(payload)
 
-        id_cluster = payload['id_cluster']
+            id_cluster = payload.get("id_cluster")
+            id_kelas = payload.get("id_kelas")
+            asn = payload.get("asn")
 
-        # 🔍 Ambil ID Kriteria Cluster berdasarkan ID Unit
-        cluster = db.session.query(tpp_cluster).filter_by(id=id_cluster).first()
-        if not cluster:
-            return {"status": False, "message": "Kriteria cluster tidak ditemukan"}, 404
+            # 🔎 Validasi field wajib
+            if id_kelas is None or asn is None or id_cluster is None:
+                return {"message": "Kolom id_unit, asn, dan id_cluster wajib diisi"}, 400
 
-        cluster_id = cluster.id
+            # 🔎 Cek apakah sudah ada data tpp_kriteria_kerja dengan id_unit dan asn sama
+            existing_records = db.session.query(tpp_kriteria_kerja).filter_by(id_kelas=id_kelas, asn=asn).all()
+            if existing_records:
+                asn_label = "PNS" if int(asn) == 1 else "PPPK"
+                id_kelas = payload.get("id_kelas", "-")
+                return {
+                    "message": f"Data kriteria kerja untuk Kelas {id_kelas} dengan {asn_label} sudah terdaftar."
+                }, 400
 
-        # 🔍 Ambil semua detail kriteria dari cluster
-        cluster_dets = db.session.query(tpp_cluster_det).filter_by(
-            id_cluster=cluster_id).all()
-        if not cluster_dets:
-            return {"status": False, "message": "Tidak ada detail kriteria ditemukan"}, 404
+            # 🔍 Ambil ID Kriteria Cluster berdasarkan ID Cluster
+            cluster = db.session.query(tpp_cluster).filter_by(id=id_cluster).first()
+            if not cluster:
+                return {"status": False, "message": "Kriteria cluster tidak ditemukan"}, 404
 
-        # ✅ Simpan ke tpp_kriteria_kerja (master) terlebih dahulu
-        result_post = GeneralPost(doc, crudTitle, Service, request)
+            cluster_id = cluster.id
 
-        # Pastikan penyimpanan berhasil, dan ambil ID hasil insert
-        if not result_post[1] == 200 or not result_post[0].get("data", {}).get("id"):
-            return {"status": False, "message": "Gagal menyimpan data kriteria kerja"}, 500
+            # 🔍 Ambil semua detail kriteria dari cluster
+            cluster_dets = db.session.query(tpp_cluster_det).filter_by(id_cluster=cluster_id).all()
+            if not cluster_dets:
+                return {"status": False, "message": "Tidak ada detail kriteria ditemukan"}, 404
 
-        id_kriteriaKerja = result_post[0]["data"]["id"]
+            # ✅ Simpan ke tpp_kriteria_kerja (master) terlebih dahulu
+            result_post = GeneralPost(doc, crudTitle, Service, request)
 
-        # 🔁 Simpan semua detail dari cluster ke tpp_kriteria_kerja_det nanti dirubah jadi kriteria generate
-        for det in cluster_dets:
-            cluster_det = tpp_kriteria_kerja_det(
-                id_kriteriaKerja=id_kriteriaKerja,
-                id_kriteria=det.id_kriteria,
-                kriteria_name=det.kriteria_name,
-                kriteria_formula=det.kriteria_formula
-            )
-            db.session.add(cluster_det)
+            # Pastikan penyimpanan berhasil, dan ambil ID hasil insert
+            if not result_post[1] == 200 or not result_post[0].get("data", {}).get("id"):
+                return {"status": False, "message": "Gagal menyimpan data kriteria kerja"}, 500
 
-        db.session.commit()
+            id_kriteriaKerja = result_post[0]["data"]["id"]
 
-        return result_post
+            # 🔁 Simpan semua detail dari cluster ke tpp_kriteria_kerja_det
+            for det in cluster_dets:
+                cluster_det = tpp_kriteria_kerja_det(
+                    id_kriteriaKerja=id_kriteriaKerja,
+                    id_kriteria=det.id_kriteria,
+                    kriteria_name=det.kriteria_name,
+                    kriteria_formula=det.kriteria_formula
+                )
+                db.session.add(cluster_det)
+
+            db.session.commit()
+
+            return result_post
+
+        except Exception as e:
+            current_app.logger.error(f"Error in create_kriteria_kerja: {str(e)}")
+            return {"message": str(e)}, 500
 
         # payload = request.get_json()
         # print(payload)
