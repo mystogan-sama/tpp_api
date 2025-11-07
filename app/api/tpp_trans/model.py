@@ -47,6 +47,7 @@ class tpp_trans(db.Model):
     pertimbangan_objektif_lainnya = db.Column(db.DECIMAL(18, 2), nullable=True)
     pertimbangan_objektif_lainnya_rp = db.Column(mssql.MONEY, nullable=True)
     pertimbangan_objektif_lainnya_rp_bln = db.Column(mssql.MONEY, nullable=True)
+    total_bulan_orang = db.Column(mssql.MONEY, nullable=True)
     total_bulan = db.Column(mssql.MONEY, nullable=True)
     total_tahun = db.Column(mssql.MONEY, nullable=True)
 

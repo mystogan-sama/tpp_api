@@ -64,6 +64,7 @@ class List(Resource):
                     ts.id_kelas,
                     ts.id_unitKerja,
                     ts.Id_JobLevel,
+                    ts.description,
                     tkc.id_cluster,
                     tb.bpk_ri,
 
@@ -118,7 +119,7 @@ class List(Resource):
                     ON tk.id = tkkd.id_kriteria
                 WHERE {where_clause}
                 GROUP BY 
-                    ts.id, ts.name, ts.id_unit, ts.id_kelas, ts.id_unitKerja, ts.Id_JobLevel, tkc.id_cluster, tb.bpk_ri;
+                    ts.id, ts.name, ts.id_unit, ts.id_kelas, ts.id_unitKerja, ts.Id_JobLevel, ts.description, tkc.id_cluster, tb.bpk_ri;
             ''')
 
             data = db.engine.execute(sqlQuery)

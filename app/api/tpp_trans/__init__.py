@@ -42,10 +42,11 @@ respAndPayloadFields = {
     "pertimbangan_objektif_lainnya_rp": fields.Fixed(required=False, example="", ),
     "pertimbangan_objektif_lainnya_rp_bln": fields.Fixed(required=False, example="", ),
     "nama_jabatan": fields.String(required=False, example="path/to/evidence3.pdf"),
+    "total_bulan_orang": fields.Fixed(required=False, example="", ),
     "total_bulan": fields.Fixed(required=False, example="", ),
     "total_tahun": fields.Fixed(required=False, example="", ),
 }
-uniqueField = ["code", "id_jabatan"]
+uniqueField = []
 searchField = ["code", "nama_jabatan"]
 sortField = ["id"]
 filterField = ["id", "id_unit", "asn"]

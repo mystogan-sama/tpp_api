@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
 import requests
-from flask import request, current_app
+from flask import request, current_app, jsonify
 from flask_restx import Resource, reqparse, inputs
 
 from app.utils import GeneralGetList, \
@@ -9,6 +9,7 @@ from app.utils import GeneralGetList, \
     row2dict_same_api_res, genRecrusive, logger, error_response
 from . import crudTitle, enabledPagination, respAndPayloadFields, fileFields, modelName, filterField
 from .doc import doc
+from .model import tpp_trans
 from .service import Service
 from ... import internalApi_byUrl
 from ...sso_helper import token_required, current_user
@@ -42,7 +43,7 @@ class List(Resource):
     def get(self):
         # args = parser.parse_args()
         insert_data = GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser)
-        print(insert_data)
+        # print(insert_data)
         return insert_data
         # return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, args, asData=True)
         # try:
@@ -97,8 +98,50 @@ class List(Resource):
     def post(self):
         try:
             data = request.get_json()
+            kelas = int(data.get('id_kelas', 1))
+            nominal = Decimal(str(data.get('total_bulan_orang', 0)))
+            id_unitKerja = data.get('id_unitKerja')
+            id_unit = data.get('id_unit')
+            asn = data.get('asn')
 
-            # konversi dulu sebelum masuk ke validasi model
+            print(f"📥 Data diterima: kelas={kelas}, nominal={nominal}, id_unitKerja={id_unitKerja}")
+
+            atasan = (
+                tpp_trans.query
+                .filter(
+                    tpp_trans.id_unitKerja == id_unitKerja,
+                    tpp_trans.id_kelas > kelas
+                )
+                .order_by(tpp_trans.id_kelas.asc())
+                .first()
+            )
+
+            if atasan:
+                print(f"✅ Ditemukan atasan: id_kelas={atasan.id_kelas}")
+                print(f"📊 total_bulan_orang atasan={atasan.total_bulan_orang}")
+                kelas_atasan = atasan.id_kelas
+                atasan_total = Decimal(str(atasan.total_bulan_orang))
+
+                # 🧮 Format Rupiah dengan dua desimal
+                def format_rupiah(value):
+                    return f"Rp {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+                nominal_fmt = format_rupiah(nominal)
+                atasan_fmt = format_rupiah(atasan_total)
+
+                # 🧩 VALIDASI — tidak boleh lebih besar dari atasan
+                if nominal > atasan_total:
+                    print("⛔ Nominal bawahan lebih besar dari atasan! Gagal disimpan.")
+                    return {
+                        "status": "error",
+                        "message": f"Total TPP : {nominal_fmt} tidak boleh lebih besar dari TPP kelas diatasnya (Kelas {kelas_atasan}) yang sebesar : {atasan_fmt}."
+                    }, 400
+
+                print("✅ Validasi OK, lanjutkan penyimpanan data.")
+            else:
+                print("⚠️ Tidak ada data atasan di unit kerja ini.")
+
+            # -- konversi angka numeric agar valid --
             numeric_fields = [
                 "beban_kerja",
                 "prestasi_kerja",
@@ -111,19 +154,15 @@ class List(Resource):
             for field in numeric_fields:
                 if field in data and data[field] is not None:
                     try:
-                        # pastikan jika string angka → float
                         if isinstance(data[field], str):
-                            data[field] = float(data[field].replace(",", ""))  # hapus koma jika ada
+                            data[field] = float(data[field].replace(",", ""))
                         else:
                             data[field] = float(data[field])
-
-                        # quantize ke 2 decimal
                         data[field] = float(Decimal(str(data[field])).quantize(Decimal("0.00")))
-
                     except (InvalidOperation, TypeError, ValueError):
-                        data[field] = None  # fallback
+                        data[field] = None
 
-            # bypass schema validation dengan langsung lempar ke service
+            # ✅ lanjut simpan
             return GeneralPost(doc, crudTitle, Service, request)
 
         except Exception as e:
