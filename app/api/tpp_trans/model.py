@@ -53,9 +53,20 @@ class tpp_trans(db.Model):
 
     #
     #
+
     @property
     def nama_jabatan(self):
-        return f"{self.tpp_structural.name}" if self.tpp_structural else None
+        if self.tpp_structural:
+            name = self.tpp_structural.name or ""
+            desc = self.tpp_structural.description or ""
+            # Gabungkan dengan format "Nama | Deskripsi" jika keduanya ada
+            if name and desc:
+                return f"{name} | {desc}"
+            return name or desc
+        return None
+    # @property
+    # def nama_jabatan(self):
+    #     return f"{self.tpp_structural.name}" if self.tpp_structural else None
     #
     # @property
     # def total_bulan(self):

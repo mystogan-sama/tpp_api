@@ -1,4 +1,5 @@
 import decimal
+import json
 from datetime import datetime
 
 import requests
@@ -144,6 +145,21 @@ class List(Resource):
 
             print(f"Level diterima: {level}, ID UnitKerja: {id_unitKerja}")
 
+            if level == 1:
+                print("🔹 Level 1 terdeteksi: tidak memiliki atasan. Menampilkan data dummy.")
+                a = [{
+                    "id": None,
+                    "id_unitKerja": id_unitKerja,
+                    "name": "Tidak ada atasan",
+                    "description": None,
+                    "level": None,
+                    "created_at": None,
+                    "updated_at": None
+                }]
+                resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
+                resp['data'] = a
+                return resp, 200
+
             # Level satu tingkat di atas
             level_atas = max(level - 1, 1)
 
@@ -200,10 +216,87 @@ class List(Resource):
                             d[column] = value
                     a.append(d)
 
+                    # Jika tetap kosong, tampilkan dummy juga
+            if not a:
+                print("⚠️ Tidak ditemukan atasan di dua level atas, tampilkan data dummy.")
+                a = [{
+                    "id": None,
+                    "id_unitKerja": id_unitKerja,
+                    "name": "Tidak ada atasan",
+                    "description": None,
+                    "level": None,
+                    "created_at": None,
+                    "updated_at": None
+                }]
+
             print("Jumlah hasil ditemukan:", len(a))
 
             resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
             resp['data'] = a
+            return resp, 200
+
+        elif args.get("struktur") == '3':
+            code = args.get("code", "1.34.%")  # default filter
+            # SQL utama
+            sqlQuery = text(f"""
+                            SELECT 
+                                u.id,
+                                u.parent_id,
+                                u.code,
+                                u.name,
+                                u.depth,
+                                u.attributes,
+                                u.created_date,
+                                u.created_by,
+                                u.updated_date,
+                                u.updated_by,
+                                CASE 
+                                    WHEN EXISTS (
+                                        SELECT 1 FROM [saba_auth].[dbo].[unit] AS c 
+                                        WHERE c.parent_id = u.id
+                                    ) THEN CAST(1 AS BIT)
+                                    ELSE CAST(0 AS BIT)
+                                END AS hasChild
+                            FROM [saba_auth].[dbo].[unit] AS u
+                            WHERE u.code LIKE :code
+                            AND u.id NOT IN (
+                                SELECT DISTINCT id_unit FROM tpp_kriteria_cluster
+                            )
+                            ORDER BY u.depth, u.code
+                        """)
+
+            data = db.engine.execute(sqlQuery, {"code": code})
+            result = []
+
+            for row in data:
+                item = {}
+                for column, value in row.items():
+                    if isinstance(value, datetime):
+                        item[column] = value.isoformat()
+                    elif isinstance(value, decimal.Decimal):
+                        item[column] = float(value)
+                    else:
+                        item[column] = value
+
+                # Ubah attributes ke dict
+                if item.get("attributes"):
+                    try:
+                        item["attributes"] = json.loads(item["attributes"])
+                    except Exception:
+                        item["attributes"] = {}
+                else:
+                    item["attributes"] = {}
+
+                # pastikan hasChild boolean
+                item["hasChild"] = bool(item.get("hasChild", False))
+                result.append(item)
+
+            resp = {
+                "status": True,
+                "message": f"Unit data sent",
+                "data": result
+            }
+
             return resp, 200
         else:
             return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser)

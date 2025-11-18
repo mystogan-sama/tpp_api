@@ -204,7 +204,7 @@ class List(Resource):
                 return {"message": "Kolom id_unit, asn, dan id_cluster wajib diisi"}, 400
 
             # 🔎 Cek apakah sudah ada data tpp_kriteria_kerja dengan id_unit dan asn sama
-            existing_records = db.session.query(tpp_kriteria_kerja).filter_by(id_kelas=id_kelas, asn=asn).all()
+            existing_records = db.session.query(tpp_kriteria_kerja).filter_by(id_cluster=id_cluster, id_kelas=id_kelas, asn=asn).all()
             if existing_records:
                 asn_label = "PNS" if int(asn) == 1 else "PPPK"
                 id_kelas = payload.get("id_kelas", "-")

@@ -37,6 +37,16 @@ class List(Resource):
             parser.add_argument(
                 f"{row.replace(':', '').replace('>', '').replace('<', '').replace('=', '').replace('!', '')}")
 
+    @staticmethod
+    def safe_decimal(value):
+        """Konversi aman ke Decimal. Jika None atau tidak valid → Decimal(0)."""
+        try:
+            if value is None or value == "":
+                return Decimal(0)
+            return Decimal(str(value))
+        except (InvalidOperation, ValueError, TypeError):
+            return Decimal(0)
+
     @doc.getRespDoc
     @api.expect(parser)
     @token_required
@@ -99,47 +109,46 @@ class List(Resource):
         try:
             data = request.get_json()
             kelas = int(data.get('id_kelas', 1))
-            nominal = Decimal(str(data.get('total_bulan_orang', 0)))
+            nominal = self.safe_decimal(data.get("total_bulan_orang"))
             id_unitKerja = data.get('id_unitKerja')
             id_unit = data.get('id_unit')
-            asn = data.get('asn')
+            asn = data.get('asn')  # <-- penting untuk filter
 
-            print(f"📥 Data diterima: kelas={kelas}, nominal={nominal}, id_unitKerja={id_unitKerja}")
+            print(f"📥 Data diterima: kelas={kelas}, nominal={nominal}, id_unitKerja={id_unitKerja}, asn={asn}")
 
+            # 🔍 Cari atasan: harus 1 unit kerja, kelas lebih tinggi, dan ASN sama
             atasan = (
                 tpp_trans.query
                 .filter(
-                    tpp_trans.id_unitKerja == id_unitKerja,
-                    tpp_trans.id_kelas > kelas
+                    tpp_trans.id_unit == id_unit,
+                    tpp_trans.id_kelas > kelas,
+                    tpp_trans.asn == asn  # <-- Filter tambahan ASN
                 )
                 .order_by(tpp_trans.id_kelas.asc())
                 .first()
             )
 
             if atasan:
-                print(f"✅ Ditemukan atasan: id_kelas={atasan.id_kelas}")
+                print(f"✅ Ditemukan atasan: id_kelas={atasan.id_kelas}, ASN={atasan.asn}")
                 print(f"📊 total_bulan_orang atasan={atasan.total_bulan_orang}")
+
                 kelas_atasan = atasan.id_kelas
-                atasan_total = Decimal(str(atasan.total_bulan_orang))
-
-                # 🧮 Format Rupiah dengan dua desimal
-                def format_rupiah(value):
-                    return f"Rp {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-                nominal_fmt = format_rupiah(nominal)
-                atasan_fmt = format_rupiah(atasan_total)
+                atasan_total = self.safe_decimal(atasan.total_bulan_orang)
 
                 # 🧩 VALIDASI — tidak boleh lebih besar dari atasan
-                if nominal > atasan_total:
-                    print("⛔ Nominal bawahan lebih besar dari atasan! Gagal disimpan.")
-                    return {
-                        "status": "error",
-                        "message": f"Total TPP : {nominal_fmt} tidak boleh lebih besar dari TPP kelas diatasnya (Kelas {kelas_atasan}) yang sebesar : {atasan_fmt}."
-                    }, 400
-
-                print("✅ Validasi OK, lanjutkan penyimpanan data.")
+                # if nominal > atasan_total:
+                #     print("⛔ Nominal bawahan lebih besar dari atasan! Gagal disimpan.")
+                #     return {
+                #         "status": "error",
+                #         "message": (
+                #             f"Total TPP bawahan ({nominal}) tidak boleh lebih besar "
+                #             f"dari TPP kelas diatasnya (Kelas {kelas_atasan}) sebesar {atasan_total}."
+                #         )
+                #     }, 400
+                #
+                # print("✅ Validasi OK, lanjutkan penyimpanan data.")
             else:
-                print("⚠️ Tidak ada data atasan di unit kerja ini.")
+                print("⚠️ Tidak ada data atasan dengan kelas lebih tinggi dan ASN yang sama.")
 
             # -- konversi angka numeric agar valid --
             numeric_fields = [
@@ -150,7 +159,6 @@ class List(Resource):
                 "kelangkaan_profesi",
                 "pertimbangan_objektif_lainnya",
             ]
-
             for field in numeric_fields:
                 if field in data and data[field] is not None:
                     try:
@@ -158,18 +166,17 @@ class List(Resource):
                             data[field] = float(data[field].replace(",", ""))
                         else:
                             data[field] = float(data[field])
-                        data[field] = float(Decimal(str(data[field])).quantize(Decimal("0.00")))
-                    except (InvalidOperation, TypeError, ValueError):
+                        data[field] = float(
+                            Decimal(str(data[field])).quantize(Decimal("0.00"))
+                        )
+                    except:
                         data[field] = None
-
             # ✅ lanjut simpan
             return GeneralPost(doc, crudTitle, Service, request)
 
         except Exception as e:
             logger.error(e)
             return {"message": str(e)}, 400
-        
-        
 
     #### MULTIPLE-DELETE
     @doc.deleteMultiRespDoc
