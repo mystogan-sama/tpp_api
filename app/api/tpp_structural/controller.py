@@ -298,6 +298,117 @@ class List(Resource):
             }
 
             return resp, 200
+
+        elif args["struktur"] == '4':
+            sqlQuery = text(f'''
+                SELECT 
+                    u.id_unit,
+                    u.nama_unit,
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 
+                            FROM tpp_trans t 
+                            WHERE t.id_unit = u.id_unit
+                        ) THEN 1
+                        ELSE 0
+                    END AS status
+                FROM (
+                    VALUES
+                    (4010003246680, 'SEKRETARIAT DAERAH'),
+                    (4010003246734, 'SEKRETARIAT DPRD'),
+                    (4010003246984, 'INSPEKTORAT DAERAH'),
+                    (4010003246985, 'DINAS PENDIDIKAN'),
+                    (4010003246986, 'DINAS KESEHATAN'),
+                    (4010003246987, 'DINAS PEKERJAAN UMUM DAN TATA RUANG'),
+                    (4010003246988, 'DINAS PERUMAHAN, KAWASAN PERMUKIMAN DAN PERTANAHAN'),
+                    (4010003246989, 'DINAS SOSIAL'),
+                    (4010003246990, 'DINAS KETENAGAKERJAAN'),
+                    (4010003246991, 'DINAS PPKB P3A'),
+                    (4010003246992, 'DINAS LINGKUNGAN HIDUP'),
+                    (4010003246993, 'DINAS KEPENDUDUKAN DAN CATATAN SIPIL'),
+                    (4010003246994, 'DINAS PEMBERDAYAAN MASYARAKAT DAN DESA'),
+                    (4010003246995, 'DINAS PERHUBUNGAN'),
+                    (4010003246996, 'DINAS KOMINFO'),
+                    (4010003246997, 'DINAS PMPTSP'),
+                    (4010003246998, 'DINAS PEMUDA DAN OLAHRAGA'),
+                    (4010003246999, 'DINAS PERDAGANGAN DAN PERINDUSTRIAN'),
+                    (4010003247000, 'DINAS PERTANIAN'),
+                    (4010003247001, 'DINAS KETAHANAN PANGAN DAN PERIKANAN'),
+                    (4010003247002, 'SATUAN POLISI PAMONG PRAJA'),
+                    (4010003247003, 'DINAS PARIWISATA DAN EKONOMI KREATIF'),
+                    (4010003247004, 'DINAS KOPERASI DAN UKM'),
+                    (4010003247005, 'DINAS PERPUSTAKAAN DAN ARSIP'),
+                    (4010003247006, 'DINAS PEMADAM KEBAKARAN DAN PENYELAMATAN'),
+                    (4010003247007, 'BAPPEDA LITBANG'),
+                    (4010003247008, 'BAKEUDA'),
+                    (4010003247009, 'BAPENDA'),
+                    (4010003247010, 'BKPSDM'),
+                    (4010003247011, 'KESBANGPOL'),
+                    (4010003247012, 'BPBD'),
+                    (4010003247013, 'KECAMATAN ARJASARI'),
+                    (4010003247014, 'KECAMATAN BALEENDAH'),
+                    (4010003247015, 'KECAMATAN BANJARAN'),
+                    (4010003247016, 'KECAMATAN BOJONGSOANG'),
+                    (4010003247017, 'KECAMATAN CANGKUANG'),
+                    (4010003247018, 'KECAMATAN CICALENGKA'),
+                    (4010003247019, 'KECAMATAN CIKANCUNG'),
+                    (4010003247020, 'KECAMATAN CILENGKRANG'),
+                    (4010003247021, 'KECAMATAN CILEUNYI'),
+                    (4010003247022, 'KECAMATAN CIMAUNG'),
+                    (4010003247023, 'KECAMATAN CIMENYAN'),
+                    (4010003247024, 'KECAMATAN CIPARAY'),
+                    (4010003247025, 'KECAMATAN CIWIDEY'),
+                    (4010003247026, 'KECAMATAN DAYEUHKOLOT'),
+                    (4010003247027, 'KECAMATAN IBUN'),
+                    (4010003247028, 'KECAMATAN KATAPANG'),
+                    (4010003247029, 'KECAMATAN KERTASARI'),
+                    (4010003247030, 'KECAMATAN KUTAWARINGIN'),
+                    (4010003247031, 'KECAMATAN MAJALAYA'),
+                    (4010003247032, 'KECAMATAN MARGAASIH'),
+                    (4010003247033, 'KECAMATAN MARGAHAYU'),
+                    (4010003247034, 'KECAMATAN NAGREG'),
+                    (4010003247035, 'KECAMATAN PACET'),
+                    (4010003247036, 'KECAMATAN PAMENGPEUK'),
+                    (4010003247037, 'KECAMATAN PANGALENGAN'),
+                    (4010003247038, 'KECAMATAN PASEH'),
+                    (4010003247039, 'KECAMATAN PASIRJAMBU'),
+                    (4010003247040, 'KECAMATAN RANCABALI'),
+                    (4010003247041, 'KECAMATAN SOLOKANJERUK'),
+                    (4010003247042, 'RSUD MAJALAYA'),
+                    (4010003247043, 'RSUD SOREANG'),
+                    (4010003247044, 'RSUD CICALENGKA'),
+                    (4010003247045, 'RSUD BEDAS CIMAUNG'),
+                    (4010003247046, 'RSUD BEDAS KERTASARI'),
+                    (4010003247047, 'RSUD BEDAS ARJASARI'),
+                    (4010003247048, 'RSUD BEDAS TEGALLUAR'),
+                    (4010003247049, 'RSUD BEDAS PACIRA'),
+                    (4010003247050, 'DINAS KEBUDAYAAN'),
+                    (4010003247051, 'KECAMATAN RANCAEKEK'),
+                    (4010003247052, 'KECAMATAN SOREANG')
+                ) AS u(id_unit, nama_unit)
+                ORDER BY u.id_unit;
+            ''')
+
+            data = db.engine.execute(sqlQuery)
+
+            a = []  # list hasil
+
+            for rowproxy in data:
+                d = {}  # ⬅️ PENTING: reset per row
+
+                for column, value in rowproxy.items():
+                    if isinstance(value, datetime):
+                        d[column] = value.isoformat()
+                    elif isinstance(value, decimal.Decimal):
+                        d[column] = float(value)
+                    else:
+                        d[column] = value
+
+                a.append(d)
+
+            resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
+            resp['data'] = a
+            return resp, 200
         else:
             return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser)
         # return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, args, asData=True)

@@ -11,6 +11,7 @@ respAndPayloadFields = {
     "kriteria_code": fields.String(example="", ),
     "kriteria_name": fields.String(example="", ),
     "kriteria_pagu": fields.Fixed(example=1, ),
+    "total_realisasi": fields.Fixed(example=1, ),
 }
 uniqueField = []
 searchField = ["unit_name"]

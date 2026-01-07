@@ -2,7 +2,7 @@ from decimal import Decimal
 from threading import Thread
 
 from sqlalchemy.dialects import mssql
-from sqlalchemy import event
+from sqlalchemy import event, func
 
 from app import db
 from app.sso_helper import insert_user_activity, current_user, check_unit_privilege_on_read_db, \
@@ -25,14 +25,17 @@ class tpp_trans(db.Model):
     basic_tpp = db.Column(mssql.MONEY, nullable=True)
     evidence_beban = db.Column(db.String(1024), nullable=True, index=True)
     beban_kerja = db.Column(db.DECIMAL(18, 2), nullable=True)
+    nominal_beban_kerja = db.Column(mssql.MONEY, nullable=True)
     beban_kerja_rp = db.Column(mssql.MONEY, nullable=True)
     beban_kerja_rp_bln = db.Column(mssql.MONEY, nullable=True)
     evidence_prestasi = db.Column(db.String(1024), nullable=True, index=True)
     prestasi_kerja = db.Column(db.DECIMAL(18, 2), nullable=True)
+    nominal_prestasi_kerja = db.Column(mssql.MONEY, nullable=True)
     prestasi_kerja_rp = db.Column(mssql.MONEY, nullable=True)
     prestasi_kerja_rp_bln = db.Column(mssql.MONEY, nullable=True)
     evidence_kondisi = db.Column(db.String(1024), nullable=True, index=True)
     kondisi_kerja = db.Column(db.DECIMAL(18, 2), nullable=True)
+    nominal_kondisi_kerja = db.Column(mssql.MONEY, nullable=True)
     kondisi_kerja_rp = db.Column(mssql.MONEY, nullable=True)
     kondisi_kerja_rp_bln = db.Column(mssql.MONEY, nullable=True)
     evidence_tempat_bekerja = db.Column(db.String(1024), nullable=True, index=True)

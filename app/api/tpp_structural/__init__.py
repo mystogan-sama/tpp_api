@@ -47,7 +47,7 @@ respAndPayloadFields = {
 uniqueField = ["code"]
 searchField = ["code", "name", "UnitKerja_name", "JobLevel_name"]
 sortField = []
-filterField = ["parent_id", "id", "id_unit", "asn", "struktur", "id_unitKerja","level"]
+filterField = ["parent_id", "id", "id_unit", "asn", "struktur", "id_unitKerja", "level", "status"]
 enabledPagination = False
 fileFields = []
 
