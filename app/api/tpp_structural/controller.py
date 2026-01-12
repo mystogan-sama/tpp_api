@@ -45,12 +45,10 @@ class List(Resource):
     def get(self):
         # args = parser.parse_args()
         args = parser.parse_args()
-        if args["struktur"] == '1' and args['id_unit']:
+        if args["struktur"] == '1' and args['id_unitKerja']:
             # Buat kondisi WHERE dinamis
-            where_clauses = [f"ts.id_unit = {args['id_unit']}"]
+            where_clauses = [f"ts.id_unitKerja = {args['id_unitKerja']}"]
 
-            if args.get('id_unitKerja'):
-                where_clauses.append(f"ts.id_unitKerja = {args['id_unitKerja']}")
             if args.get('asn'):
                 where_clauses.append(f"tkk.asn = {args['asn']}")
 
@@ -134,19 +132,25 @@ class List(Resource):
                     else:
                         d = {**d, **{column: value}}
                 a.append(d)
-
+            print(a)
             resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
             resp['data'] = a
             return resp, 200
 
-        elif args.get("struktur") == '2' and args.get('id_unitKerja') and args.get('level'):
-            id_unitKerja = args.get('id_unitKerja')
-            level = int(args.get('level', 1))
+        elif args.get("struktur") == '2' and args.get('id_unit') and args.get('id_unitKerja') and args.get('level'):
 
-            print(f"Level diterima: {level}, ID UnitKerja: {id_unitKerja}")
+            id_unit = int(args.get('id_unit'))
+            id_unitKerja = int(args.get('id_unitKerja'))
+            level = int(args.get('level'))
 
+            print(f"🔎 Cari atasan | level_jabatan={level}, id_unitKerja={id_unitKerja}")
+
+            a = []
+
+            # =====================================================
+            # 0️⃣ LEVEL 1 → TIDAK ADA ATASAN
+            # =====================================================
             if level == 1:
-                print("🔹 Level 1 terdeteksi: tidak memiliki atasan. Menampilkan data dummy.")
                 a = [{
                     "id": None,
                     "id_unitKerja": id_unitKerja,
@@ -160,65 +164,123 @@ class List(Resource):
                 resp['data'] = a
                 return resp, 200
 
-            # Level satu tingkat di atas
-            level_atas = max(level - 1, 1)
+            # =====================================================
+            # 1️⃣ AMBIL KELAS BAWAHAN DARI DB (BUKAN DARI PARAM)
+            # =====================================================
+            kelas_bawahan = db.engine.execute(
+                text("""
+                    SELECT id_kelas
+                    FROM tpp_structural
+                    WHERE id_unitKerja = :id_unitKerja
+                      AND level = :level
+                """),
+                {
+                    "id_unitKerja": id_unitKerja,
+                    "level": level
+                }
+            ).scalar()
 
-            # Query pertama
-            sqlQuery = text('''
+            # fallback aman
+            kelas_bawahan = int(kelas_bawahan) if kelas_bawahan is not None else 0
+
+            print(f"📌 Kelas bawahan = {kelas_bawahan}")
+
+            # =====================================================
+            # 2️⃣ CARI ATASAN DI UNIT YANG SAMA (LEVEL-1)
+            # =====================================================
+            level_atas = level - 1
+
+            sql_same_unit = text("""
                 SELECT *
                 FROM tpp_structural
                 WHERE id_unitKerja = :id_unitKerja
-                  AND CAST(level AS CHAR) = :level_atas
-            ''')
+                  AND level = :level_atas
+            """)
 
-            data = db.engine.execute(sqlQuery, {
-                'id_unitKerja': id_unitKerja,
-                'level_atas': str(level_atas)
+            data = db.engine.execute(sql_same_unit, {
+                "id_unitKerja": id_unitKerja,
+                "level_atas": level_atas
             })
 
-            a = []
-            for rowproxy in data:
-                d = {}
-                for column, value in rowproxy.items():
-                    if isinstance(value, datetime):
-                        d[column] = value.isoformat()
-                    elif isinstance(value, decimal.Decimal):
-                        d[column] = float(value)
-                    else:
-                        d[column] = value
-                a.append(d)
+            for row in data:
+                a.append(dict(row))
 
-            # Jika kosong, coba dua level di atas
-            if not a:
-                level_dua_atas = max(level - 2, 1)
-                print(f"Tidak ditemukan di level {level_atas}, coba cari di level {level_dua_atas}")
+            # =====================================================
+            # 3️⃣ JIKA KOSONG → COBA LEVEL-2 DI UNIT YANG SAMA
+            # =====================================================
+            if not a and level > 2:
+                level_dua_atas = level - 2
+                print(f"⚠️ Tidak ada di level {level_atas}, coba level {level_dua_atas}")
 
-                sqlQuery2 = text('''
+                sql_same_unit_2 = text("""
                     SELECT *
                     FROM tpp_structural
                     WHERE id_unitKerja = :id_unitKerja
-                      AND CAST(level AS CHAR) = :level_dua_atas
-                ''')
+                      AND level = :level_dua_atas
+                """)
 
-                data2 = db.engine.execute(sqlQuery2, {
-                    'id_unitKerja': id_unitKerja,
-                    'level_dua_atas': str(level_dua_atas)
+                data2 = db.engine.execute(sql_same_unit_2, {
+                    "id_unitKerja": id_unitKerja,
+                    "level_dua_atas": level_dua_atas
                 })
 
-                for rowproxy in data2:
-                    d = {}
-                    for column, value in rowproxy.items():
-                        if isinstance(value, datetime):
-                            d[column] = value.isoformat()
-                        elif isinstance(value, decimal.Decimal):
-                            d[column] = float(value)
-                        else:
-                            d[column] = value
-                    a.append(d)
+                for row in data2:
+                    a.append(dict(row))
 
-                    # Jika tetap kosong, tampilkan dummy juga
+            # =====================================================
+            # 4️⃣ JIKA MASIH KOSONG → NAIK 1 LEVEL UNIT KERJA
+            # =====================================================
             if not a:
-                print("⚠️ Tidak ditemukan atasan di dua level atas, tampilkan data dummy.")
+                print("🔁 Tidak ada atasan di unit ini, naik level unit kerja")
+
+                # Ambil level unit kerja saat ini
+                unit_level = db.engine.execute(
+                    text("""
+                        SELECT level
+                        FROM tpp_unitKerja
+                        WHERE id = :id_unitKerja
+                    """),
+                    {"id_unitKerja": id_unitKerja}
+                ).scalar()
+
+                if unit_level and unit_level > 1:
+                    unit_level_atas = unit_level - 1
+
+                    # Ambil unit kerja 1 level di atas
+                    unit_atas = db.engine.execute(
+                        text("""
+                            SELECT id
+                            FROM tpp_unitKerja
+                            WHERE level = :level_atas
+                        """),
+                        {"level_atas": unit_level_atas}
+                    ).scalar()
+
+                    if unit_atas:
+                        print(f"⬆️ Naik ke unitKerja={unit_atas}, level_unit={unit_level_atas}")
+
+                        sql_parent_unit = text("""
+                            SELECT *
+                            FROM tpp_structural
+                            WHERE id_unit = :id_unit AND level = :level_atas_jabatan
+                              AND id_kelas >= :kelas_min_atasan AND Id_JobLevel IN (1,2,3)
+                            ORDER BY id_kelas ASC
+                        """)
+
+                        data3 = db.engine.execute(sql_parent_unit, {
+                            "id_unit": id_unit,
+                            "level_atas_jabatan": level_atas,
+                            "kelas_min_atasan": kelas_bawahan + 2
+                        })
+
+                        for row in data3:
+                            a.append(dict(row))
+
+            # =====================================================
+            # 5️⃣ JIKA TETAP TIDAK ADA → DUMMY
+            # =====================================================
+            if not a:
+                print("❌ Tidak ditemukan atasan sama sekali")
                 a = [{
                     "id": None,
                     "id_unitKerja": id_unitKerja,
@@ -229,7 +291,7 @@ class List(Resource):
                     "updated_at": None
                 }]
 
-            print("Jumlah hasil ditemukan:", len(a))
+            print(f"✅ Jumlah atasan ditemukan: {len(a)}")
 
             resp = message(True, generateDefaultResponse(crudTitle, 'get-list', 200))
             resp['data'] = a

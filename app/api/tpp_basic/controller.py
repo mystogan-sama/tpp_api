@@ -72,12 +72,12 @@ class List(Resource):
         args = parser.parse_args()
 
         # Paksa tahun masuk ke args
-        args['tahun'] = current_user['data_year']
-
-        # Paksa parser agar 'tahun' terlihat di payload (args) untuk GeneralGetList
-        for action in parser.args:
-            if action.name == 'tahun':
-                action.default = current_user['data_year']
+        # args['tahun'] = current_user['data_year']
+        #
+        # # Paksa parser agar 'tahun' terlihat di payload (args) untuk GeneralGetList
+        # for action in parser.args:
+        #     if action.name == 'tahun':
+        #         action.default = current_user['data_year']
         return GeneralGetList(doc, crudTitle, enabledPagination, respAndPayloadFields, Service, parser)
 
     
