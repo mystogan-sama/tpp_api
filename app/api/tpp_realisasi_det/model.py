@@ -14,7 +14,7 @@ from ..tpp_kriteria.model import tpp_kriteria
 class tpp_realisasi_det(db.Model):
     __tablename__ = f'{modelName}'
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
-    id_realisasi = db.Column(db.Integer, db.ForeignKey("tpp_pagu.id"), nullable=True)
+    id_realisasi = db.Column(db.Integer, db.ForeignKey("tpp_realisasi.id"), nullable=True)
     id_kriteria = db.Column(db.Integer, nullable=True)
     kriteria_code = db.Column(db.String(512), nullable=True)
     kriteria_name = db.Column(db.String(512), nullable=True)

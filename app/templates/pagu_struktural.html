@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pagu Struktural - TPP Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        /* Palette: Indigo & Emerald Modern */
+        --primary: #4f46e5; /* Indigo 600 */
+        --primary-dark: #3730a3; /* Indigo 800 */
+        --secondary: #10b981; /* Emerald 500 */
+        --accent: #f59e0b; /* Amber 500 */
+        --danger: #ef4444; /* Red 500 */
+
+        --bg-body: #f3f4f6; /* Gray 100 */
+        --bg-card: #ffffff;
+        --bg-sidebar: #1e1b4b; /* Indigo 950 */
+
+        --text-main: #111827; /* Gray 900 */
+        --text-muted: #6b7280; /* Gray 500 */
+        --text-light: #f9fafb; /* Gray 50 */
+
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --radius: 0.75rem; /* 12px */
+
+        --sidebar-width: 260px;
+        --header-height: 64px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: var(--sidebar-width);
+        background-color: var(--bg-sidebar);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        z-index: 50;
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar-brand {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #818cf8; /* Indigo 400 */
+        letter-spacing: -0.025em;
+      }
+
+      .sidebar-brand span {
+        color: white;
+      }
+
+      .nav-link {
+        text-decoration: none;
+        color: #9ca3af; /* Gray 400 */
+        padding: 12px 16px;
+        margin-bottom: 4px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+      }
+
+      .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: white;
+      }
+
+      .nav-link.active {
+        background-color: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+      }
+
+      /* Main Content */
+      .main-content {
+        margin-left: var(--sidebar-width);
+        flex: 1;
+        padding: 24px 32px;
+        padding-top: calc(var(--header-height) + 24px);
+        max-width: 1600px;
+      }
+
+      /* Header */
+      .top-header {
+        position: fixed;
+        top: 0;
+        left: var(--sidebar-width);
+        right: 0;
+        height: var(--header-height);
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        z-index: 40;
+      }
+
+      .top-header h1 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .user-profile {
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .avatar {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      /* Grid System */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+        gap: 24px;
+      }
+
+      .grid-1 {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      /* Section Styling */
+      .section-container {
+        margin-bottom: 48px;
+        opacity: 0;
+        animation: fadeIn 0.5s ease-out forwards;
+      }
+
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-size: 1.1rem;
+        color: var(--text-main);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .section-title::before {
+        content: "";
+        display: block;
+        width: 4px;
+        height: 24px;
+        background: var(--primary);
+        border-radius: 4px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+        background: #e5e7eb;
+        padding: 4px;
+        border-radius: 8px;
+      }
+
+      /* Buttons & Inputs */
+      button {
+        padding: 6px 16px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        transition: all 0.2s;
+      }
+
+      button.active {
+        background-color: white;
+        color: var(--primary);
+        box-shadow: var(--shadow-sm);
+      }
+
+      select {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+        color: var(--text-main);
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      select:focus {
+        border-color: var(--primary);
+      }
+
+      /* Cards */
+      .card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        padding: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+      }
+
+      .card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      /* Big Numbers */
+      .stat-value {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--text-main);
+        letter-spacing: -0.03em;
+        margin-bottom: 4px;
+        background: linear-gradient(135deg, var(--text-main), var(--primary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+
+      /* Chart Area */
+      .chart-container {
+        position: relative;
+        height: 320px;
+        width: 100%;
+      }
+
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+          width: 240px;
+        }
+        .sidebar.active {
+          transform: translateX(0);
+        }
+        .main-content {
+          margin-left: 0;
+          padding: 16px;
+          padding-top: 80px;
+        }
+        .top-header {
+          left: 0;
+        }
+      }
+
+      /* Indicators */
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+      }
+      .bg-success {
+        background: var(--secondary);
+      }
+      .bg-warning {
+        background: var(--accent);
+      }
+      .bg-danger {
+        background: var(--danger);
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span>TPP</span> GOV DASHBOARD</div>
+      <nav>
+        <a href="pagu_struktural.html" class="nav-link active"
+          ><span>Pagu Struktural</span></a
+        >
+        <a href="pagu_kelas.html" class="nav-link"
+          ><span>Pagu Per Kelas</span></a
+        >
+        <a href="jabatan_pelaksana.html" class="nav-link"
+          ><span>Jabatan Pelaksana</span></a
+        >
+        <a href="jabatan_fungsional.html" class="nav-link"
+          ><span>Jabatan Fungsional</span></a
+        >
+        <a href="pagu_guru.html" class="nav-link"><span>Pagu Guru</span></a>
+        <a href="serapan_tpp.html" class="nav-link"><span>Serapan TPP</span></a>
+      </nav>
+      <div style="margin-top: auto; font-size: 0.75rem; opacity: 0.5">
+        &copy; 2024 Pemda System
+      </div>
+    </aside>
+
+    <header class="top-header">
+      <h1>Monitoring & Evaluasi TPP</h1>
+      <div class="user-profile">
+        <span>Admin PEMDA</span>
+        <div class="avatar">A</div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section
+        id="sec-struktural"
+        class="section-container"
+        style="animation-delay: 0.1s"
+      >
+        <div class="section-header">
+          <div class="section-title">1. Pagu Struktural</div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Kebutuhan per SKPD</div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chartStrukturalSKPD"></canvas>
+            </div>
+          </div>
+          <div class="card" style="display: flex; flex-direction: column">
+            <div class="card-header">
+              <div class="card-title">Total Anggaran Struktural</div>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px">
+              <div class="stat-value" id="valTotalStruktural">Rp 0</div>
+              <div class="stat-label">Tahun Anggaran 2024</div>
+            </div>
+            <div class="chart-container" style="height: 200px; flex: 1">
+              <canvas id="chartStrukturalPemdaPie"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // ==========================================
+      //  MODERN CONFIG
+      // ==========================================
+
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.color = "#6b7280";
+      Chart.defaults.scale.grid.color = "#f3f4f6";
+      Chart.defaults.scale.grid.drawBorder = false;
+      Chart.defaults.plugins.tooltip.backgroundColor = "#1e1b4b";
+      Chart.defaults.plugins.tooltip.padding = 12;
+      Chart.defaults.plugins.tooltip.cornerRadius = 8;
+
+      const COLORS = {
+        primary: "#4f46e5",
+        secondary: "#10b981",
+        accent: "#f59e0b",
+        danger: "#ef4444",
+        slate: "#64748b",
+      };
+
+      const SKPD_LIST = [
+        "Dinas Pendidikan",
+        "Dinas Kesehatan",
+        "Dinas PU",
+        "Bappeda",
+        "BKPSDM",
+        "Sekretariat Daerah",
+        "Inspektorat",
+      ];
+
+      const rand = (min, max) =>
+        Math.floor(Math.random() * (max - min + 1)) + min;
+      const formatIDR = (num) =>
+        new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          maximumFractionDigits: 0,
+        }).format(num);
+
+      const DATA_STRUKTURAL = {
+        skpdPrices: SKPD_LIST.map((skpd) => ({
+          name: skpd,
+          value: rand(500000000, 2500000000),
+        })),
+      };
+
+      // --- Init ---
+      document.addEventListener("DOMContentLoaded", () => {
+        renderSection1();
+      });
+
+      function renderSection1() {
+        // Bar
+        new Chart(document.getElementById("chartStrukturalSKPD"), {
+          type: "bar",
+          data: {
+            labels: DATA_STRUKTURAL.skpdPrices.map((d) => d.name),
+            datasets: [
+              {
+                label: "Kebutuhan Pagu",
+                data: DATA_STRUKTURAL.skpdPrices.map((d) => d.value),
+                backgroundColor: COLORS.primary,
+                borderRadius: 6,
+                hoverBackgroundColor: COLORS.primary_dark,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+          },
+        });
+
+        // Summary Text
+        const total = DATA_STRUKTURAL.skpdPrices.reduce(
+          (a, b) => a + b.value,
+          0
+        );
+        const elTotal = document.getElementById("valTotalStruktural");
+        if (elTotal) elTotal.textContent = formatIDR(total);
+
+        // Doughnut
+        new Chart(document.getElementById("chartStrukturalPemdaPie"), {
+          type: "doughnut",
+          data: {
+            labels: DATA_STRUKTURAL.skpdPrices.map((d) => d.name),
+            datasets: [
+              {
+                data: DATA_STRUKTURAL.skpdPrices.map((d) => d.value),
+                backgroundColor: [
+                  COLORS.primary,
+                  COLORS.secondary,
+                  COLORS.accent,
+                  COLORS.danger,
+                  "#3b82f6",
+                  "#8b5cf6",
+                  "#ec4899",
+                ],
+                borderWidth: 0,
+                hoverOffset: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            cutout: "70%",
+          },
+        });
+      }
+    </script>
+  </body>
+</html>

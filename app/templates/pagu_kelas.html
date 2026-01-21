@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pagu Per Kelas - TPP Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* Exact copy of CSS from previous step */
+      :root {
+        /* Palette: Indigo & Emerald Modern */
+        --primary: #4f46e5; /* Indigo 600 */
+        --primary-dark: #3730a3; /* Indigo 800 */
+        --secondary: #10b981; /* Emerald 500 */
+        --accent: #f59e0b; /* Amber 500 */
+        --danger: #ef4444; /* Red 500 */
+
+        --bg-body: #f3f4f6; /* Gray 100 */
+        --bg-card: #ffffff;
+        --bg-sidebar: #1e1b4b; /* Indigo 950 */
+
+        --text-main: #111827; /* Gray 900 */
+        --text-muted: #6b7280; /* Gray 500 */
+        --text-light: #f9fafb; /* Gray 50 */
+
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --radius: 0.75rem; /* 12px */
+
+        --sidebar-width: 260px;
+        --header-height: 64px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        width: var(--sidebar-width);
+        background-color: var(--bg-sidebar);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        z-index: 50;
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar-brand {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #818cf8;
+        letter-spacing: -0.025em;
+      }
+
+      .sidebar-brand span {
+        color: white;
+      }
+
+      .nav-link {
+        text-decoration: none;
+        color: #9ca3af;
+        padding: 12px 16px;
+        margin-bottom: 4px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+      }
+
+      .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: white;
+      }
+
+      .nav-link.active {
+        background-color: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+      }
+
+      .main-content {
+        margin-left: 1;
+        flex: 1;
+        padding: 24px 32px;
+        padding-top: 2px;
+        max-width: 1600px;
+      }
+
+      .top-header {
+        position: fixed;
+        top: 0;
+        left: var(--sidebar-width);
+        right: 0;
+        height: var(--header-height);
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        z-index: 40;
+      }
+
+      .top-header h1 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .user-profile {
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .avatar {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        padding: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+      }
+
+      .card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 320px;
+        width: 100%;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+        background: #e5e7eb;
+        padding: 4px;
+        border-radius: 8px;
+      }
+
+      button {
+        padding: 6px 16px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        transition: all 0.2s;
+      }
+
+      button.active {
+        background-color: white;
+        color: var(--primary);
+        box-shadow: var(--shadow-sm);
+      }
+
+      select {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+        color: var(--text-main);
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+          width: 240px;
+        }
+        .sidebar.active {
+          transform: translateX(0);
+        }
+        .main-content {
+          margin-left: 0;
+          padding: 16px;
+          padding-top: 80px;
+        }
+        .top-header {
+          left: 0;
+        }
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-size: 1.1rem;
+        color: var(--text-main);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .section-title::before {
+        content: "";
+        display: block;
+        width: 4px;
+        height: 24px;
+        background: var(--primary);
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="main-content">
+      <section id="sec-kelas" class="section-container">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title" id="titleKelasChart">
+              Pagu Desk Per Kelas
+            </div>
+          </div>
+          <div class="chart-container"><canvas id="chartKelas"></canvas></div>
+        </div>
+      </section>
+    </main>
+    <script>
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.color = "#6b7280";
+      Chart.defaults.scale.grid.color = "#f3f4f6";
+      Chart.defaults.scale.grid.drawBorder = false;
+
+      const COLORS = {
+        primary: "#4f46e5",
+        accent: "#f59e0b",
+      };
+
+      const API_URL = "{{ host_url }}tpp_dashboard?dashboard=3";
+
+      // 🔑 TOKEN DARI BACKEND (WAJIB)
+      const AUTH_TOKEN = "{{ auth_qs }}";
+
+      let chartKelasInstance = null;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        if (!AUTH_TOKEN) {
+          alert("Token tidak ditemukan, silakan login ulang");
+          return;
+        }
+        loadKelas();
+      });
+
+      async function loadKelas() {
+        try {
+          const res = await fetch(API_URL, {
+            headers: {
+              Authorization: AUTH_TOKEN,
+            },
+          });
+
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+
+          const json = await res.json();
+          const rawData = json.data || [];
+
+          console.log("DATA KELAS:", rawData);
+
+          const pnsData = Array(15).fill(0);
+          const pppkData = Array(15).fill(0);
+
+          rawData.forEach((item) => {
+            const idx = item.id_kelas - 1;
+            if (idx < 0 || idx > 14) return;
+
+            if (item.jenis_asn === "PNS") {
+              pnsData[idx] = item.total_tahun;
+            } else if (item.jenis_asn === "PPPK") {
+              pppkData[idx] = item.total_tahun;
+            }
+          });
+
+          renderChart(pnsData, pppkData);
+        } catch (err) {
+          console.error("Gagal load data:", err);
+          alert("Gagal mengambil data TPP");
+        }
+      }
+
+      function renderChart(pnsData, pppkData) {
+        const ctx = document.getElementById("chartKelas").getContext("2d");
+
+        if (chartKelasInstance) chartKelasInstance.destroy();
+
+        chartKelasInstance = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: Array.from({ length: 15 }, (_, i) => `K-${i + 1}`),
+            datasets: [
+              {
+                label: "PNS",
+                data: pnsData,
+                backgroundColor: COLORS.primary,
+                borderRadius: 4,
+              },
+              {
+                label: "PPPK",
+                data: pppkData,
+                backgroundColor: COLORS.accent,
+                borderRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { grid: { display: false } },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: (v) => "Rp " + v.toLocaleString("id-ID"),
+                },
+              },
+            },
+            plugins: {
+              legend: { position: "top" },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) =>
+                    `${ctx.dataset.label}: Rp ${ctx.parsed.y.toLocaleString(
+                      "id-ID"
+                    )}`,
+                },
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>

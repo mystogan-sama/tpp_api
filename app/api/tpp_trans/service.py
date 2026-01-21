@@ -411,6 +411,327 @@ class Service:
             current_app.logger.error(f"Error in getSummaryKriteriaP3K: {error}")
             return None
 
+    def getSummaryPaguStr(args):
+        try:
+            base_query = tpp_trans.query
+            unit = current_user.get("member_of_list")
+            current_app.logger.info(f"unit: {unit}")
+
+            if unit:
+                # pastikan unit adalah list
+                if not isinstance(unit, list):
+                    unit = [unit]
+
+                first_unit = str(unit[0])
+                current_app.logger.info(f"first_unit: {first_unit}")
+
+                # Jika unit pertama adalah 4010003246677 atau 1 → hitung semua unit
+                if first_unit in ["4010003246677", "1"]:
+                    current_app.logger.info("first_unit adalah 4010003246677 atau 1 → menghitung semua unit")
+                else:
+                    base_query = base_query.filter(tpp_trans.id_unit == first_unit)
+                    # print(base_query)
+                    current_app.logger.info(f"Menghitung hanya untuk unit: {unit}")
+            else:
+                current_app.logger.warning("member_of_list kosong atau tidak valid")
+
+            # Hitung total pemangku
+            total_pns = base_query.with_entities(
+                func.sum(tpp_trans.jml_pemangku)).filter(tpp_trans.asn == 1
+            ).scalar() or 0
+
+            total_struktural_pns = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.Id_JobLevel.in_([1, 2, 3]),
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_fungsional_pns = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.Id_JobLevel == 4,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_fungsional_pppk = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.Id_JobLevel == 4,
+                tpp_trans.asn == 0).scalar() or 0
+
+            total_pelaksana_pns = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.Id_JobLevel == 5,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_pelaksana_pppk = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.Id_JobLevel == 5,
+                tpp_trans.asn == 0).scalar() or 0
+
+            def to_rupiah(value):
+                return f"Rp. {float(value):,.0f}".replace(",", ".")
+
+            result = [
+                {
+                    "title": "Struktural PNS",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_struktural_pns),
+                    "color": "success"
+                },
+                {
+                    "title": "Fungsional PNS",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_fungsional_pns),
+                    "color": "success"
+                },
+                {
+                    "title": "Fungsional PPPK",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_fungsional_pppk),
+                    "color": "success"
+                },
+                {
+                    "title": "Pelaksana PNS",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_pelaksana_pns),
+                    "color": "success"
+                },
+                {
+                    "title": "Pelaksana PPPK",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_pelaksana_pppk),
+                    "color": "success"
+                }
+
+            ]
+
+
+            return result
+
+        except Exception as error:
+            current_app.logger.error(f"Error in getSummary: {str(error)}")
+            return {"error": str(error)}
+
+    def getSummaryPaguKelasPNS(args):
+        try:
+            base_query = tpp_trans.query
+            unit = current_user.get("member_of_list")
+            current_app.logger.info(f"unit: {unit}")
+
+            if unit:
+                # pastikan unit adalah list
+                if not isinstance(unit, list):
+                    unit = [unit]
+
+                first_unit = str(unit[0])
+                current_app.logger.info(f"first_unit: {first_unit}")
+
+                # Jika unit pertama adalah 4010003246677 atau 1 → hitung semua unit
+                if first_unit in ["4010003246677", "1"]:
+                    current_app.logger.info("first_unit adalah 4010003246677 atau 1 → menghitung semua unit")
+                else:
+                    base_query = base_query.filter(tpp_trans.id_unit == first_unit)
+                    # print(base_query)
+                    current_app.logger.info(f"Menghitung hanya untuk unit: {unit}")
+            else:
+                current_app.logger.warning("member_of_list kosong atau tidak valid")
+
+            # Hitung total pemangku
+            total_kelas_1 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 1,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_2 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 2,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_3 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 3,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_4 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 4,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_5 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 5,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_6 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 6,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_7 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 7,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_8 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 8,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_9 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 9,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_10 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 10,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_11 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 11,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_12 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 12,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_13 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 13,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_14 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 14,
+                tpp_trans.asn == 1).scalar() or 0
+
+            total_kelas_15 = base_query.with_entities(
+                func.sum(tpp_trans.total_tahun)
+            ).filter(
+                tpp_trans.id_kelas == 15,
+                tpp_trans.asn == 1).scalar() or 0
+
+            def to_rupiah(value):
+                return f"Rp. {float(value):,.0f}".replace(",", ".")
+
+            result = [
+                {
+                    "title": "Kelas 1",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_1),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 2",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_2),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 3",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_3),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 4",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_4),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 5",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_5),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 6",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_6),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 7",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_7),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 8",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_8),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 9",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_9),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 10",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_10),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 11",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_11),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 12",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_12),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 13",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_13),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 14",
+                    "icon": "material:account_circle",
+                    "count": to_rupiah(total_kelas_14),
+                    "color": "success"
+                },
+                {
+                    "title": "Kelas 15",
+                    "icon": "material:account_circle",
+                    "count": 1066680000,
+                    "color": "success"
+                }
+            ]
+
+
+            return result
+
+        except Exception as error:
+            current_app.logger.error(f"Error in getSummary: {str(error)}")
+            return {"error": str(error)}
+
     @staticmethod
     def getDataAll(args):
         return GeneralGetDataAll(respAndPayloadFields, model, current_app, args, filterField)

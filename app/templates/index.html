@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TPP Dashboard Executive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        /* Palette: Indigo & Emerald Modern */
+        --primary: #81dcc2; /* Indigo 600 */
+        --primary-dark: #3730a3; /* Indigo 800 */
+        --secondary: #10b981; /* Emerald 500 */
+        --accent: #ff954a; /* Amber 500 */
+        --danger: #ef4444; /* Red 500 */
+        --slate: #64748b;
+
+        --bg-body: #f3f4f6; /* Gray 100 */
+        --bg-card: #ffffff;
+
+        --text-main: #111827; /* Gray 900 */
+        --text-muted: #6b7280; /* Gray 500 */
+
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --radius: 0.75rem; /* 12px */
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .main-content {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+
+      /* Summary Grid */
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin-bottom: 32px;
+      }
+
+      .summary-card {
+        border-radius: 20px;
+        padding: 24px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      .summary-card.blue {
+        background: linear-gradient(135deg, #00c58d, #00946a);
+      }
+
+      .summary-card.orange {
+        background: linear-gradient(135deg, #ff954a, #ff7c1f);
+      }
+
+      .summary-card.green {
+        background: linear-gradient(135deg, #00aacc, #006c82);
+      }
+
+      .summary-card.red {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+      }
+
+      .summary-content {
+        z-index: 2;
+        position: relative;
+        max-width: 65%;
+      }
+
+      .summary-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        opacity: 0.9;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .summary-value {
+        font-size: 1.5rem; /* Slightly smaller to fit 4 cards */
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+        line-height: 1.2;
+      }
+
+      .summary-chart-wrapper {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 90px;
+        height: 90px;
+        z-index: 1;
+      }
+
+      /* Grid System */
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+      }
+
+      .full-width {
+        grid-column: span 2;
+      }
+
+      @media (max-width: 1280px) {
+        .summary-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+        .full-width {
+          grid-column: span 1;
+        }
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Section Styling */
+      .section-container {
+        margin-bottom: 24px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .section-title {
+        font-size: 1.1rem;
+        color: var(--text-main);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .section-title::before {
+        content: "";
+        display: block;
+        width: 4px;
+        height: 24px;
+        background: var(--primary);
+        border-radius: 4px;
+      }
+
+      /* Card Styling */
+      .card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        padding: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+      }
+
+      .card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      /* Chart Area */
+      .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+      }
+
+      /* Stats */
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-main);
+        letter-spacing: -0.03em;
+        margin-bottom: 4px;
+        background: linear-gradient(135deg, var(--text-main), var(--primary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+
+      /* Controls & Badges */
+      select {
+        padding: 6px 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+        color: var(--text-main);
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+      }
+      .bg-success {
+        background: var(--secondary);
+      }
+      .bg-warning {
+        background: var(--accent);
+      }
+      .bg-danger {
+        background: var(--danger);
+      }
+
+      /* =========================
+ * SERAPAN PAGU HEADER
+ * ========================= */
+      .serapan-pagu {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 Columns */
+        gap: 24px;
+        margin-top: 24px; /* Move spacing to top */
+        padding-top: 24px;
+        border-top: 1px solid #f1f5f9;
+        background: transparent;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+      }
+
+      .serapan-pagu .item {
+        display: flex;
+        flex-direction: column;
+        padding-left: 16px;
+        position: relative;
+      }
+
+      /* Vertical Color Bars */
+      .serapan-pagu .item::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 4px;
+        bottom: 4px;
+        width: 4px;
+        border-radius: 4px;
+      }
+
+      .serapan-pagu .item.pns::before {
+        background: var(--primary);
+      }
+      .serapan-pagu .item.pppk::before {
+        background: var(--accent);
+      }
+      .serapan-pagu .item.total::before {
+        background: #94a3b8;
+      }
+
+      .serapan-pagu .label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 4px;
+      }
+
+      .serapan-pagu .value-group {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .serapan-pagu .value {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--text-main);
+      }
+
+      .serapan-pagu .sub-value {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+
+      /* Hide the old background box styles */
+      .serapan-pagu .total {
+        background: transparent;
+        padding: 0;
+        padding-left: 16px;
+        color: inherit;
+      }
+
+      @media (max-width: 768px) {
+        .serapan-pagu {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+      }
+
+      /* =========================
+       * EXTERNAL TOOLTIP
+       * ========================= */
+      #chartjs-tooltip {
+        opacity: 0;
+        position: absolute;
+        background: #0f172a; /* Slate 900 */
+        color: white;
+        border-radius: 8px;
+        pointer-events: none;
+        transform: translate(-50%, -100%) translateY(-10px); /* Center Top */
+        transition: opacity 0.1s ease;
+        z-index: 9999;
+        padding: 12px;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        min-width: 120px;
+        pointer-events: none;
+      }
+      #chartjs-tooltip .tooltip-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: white;
+      }
+      #chartjs-tooltip .tooltip-body {
+        font-size: 12px;
+        color: #cbd5e1; /* Slate 300 */
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-content">
+      <!-- HEADER TITLE -->
+      <div style="margin-bottom: 32px">
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--primary)">
+          DASHBOARD
+        </h1>
+        <p style="color: var(--text-muted)">Monitoring & Evaluasi TPP</p>
+      </div>
+
+      <!-- NEW SUMMARY ROW -->
+      <div class="summary-grid">
+        <!-- CARD 1: Struktural (Blue) -->
+        <div class="summary-card blue">
+          <div class="summary-content">
+            <div class="summary-title">Struktural</div>
+            <div class="summary-value" id="sumStrukturalVal">Rp 0</div>
+            <div style="font-size: 0.8rem; margin-top: 8px; opacity: 0.8">
+              Total Anggaran
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: Fungsional (Orange) -->
+        <div class="summary-card orange" id="cardFungsional">
+          <div class="summary-content">
+            <div class="summary-title">Fungsional</div>
+            <div class="summary-value" id="sumFungsionalVal">Rp 0</div>
+            <div style="font-size: 0.8rem; margin-top: 8px; opacity: 0.8">
+              PNS & PPPK
+            </div>
+          </div>
+          <div class="summary-chart-wrapper">
+            <canvas id="chartPieFungsional"></canvas>
+          </div>
+        </div>
+
+        <!-- CARD 3: Pelaksana (Green) -->
+        <div class="summary-card green" id="cardPelaksana">
+          <div class="summary-content">
+            <div class="summary-title">Pelaksana</div>
+            <div class="summary-value" id="sumPelaksanaVal">Rp 0</div>
+            <div style="font-size: 0.8rem; margin-top: 8px; opacity: 0.8">
+              PNS & PPPK
+            </div>
+          </div>
+          <div class="summary-chart-wrapper">
+            <canvas id="chartPiePelaksana"></canvas>
+          </div>
+        </div>
+
+        <!-- CARD 4: Pagu Guru (Red) -->
+        <div class="summary-card red">
+          <div class="summary-content">
+            <div class="summary-title">Guru</div>
+            <div class="summary-value" id="sumGuruVal">Rp 0</div>
+            <div style="font-size: 0.8rem; margin-top: 8px; opacity: 0.8">
+              PNS & PPPK
+            </div>
+          </div>
+          <div class="summary-chart-wrapper">
+            <canvas id="chartPieGuru"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- 1. Pagu Per Kelas (Preserved Script Logic) -->
+        <div class="card full-width">
+          <div class="card-header">
+            <div class="card-title">Pagu Desk Per Kelas</div>
+          </div>
+          <div class="chart-container"><canvas id="chartKelas"></canvas></div>
+        </div>
+
+        <!-- 2. Serapan TPP -->
+        <div class="card full-width">
+          <div class="card-header">
+            <div class="card-title">Analisis Serapan TPP</div>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="chartSerapan"></canvas>
+          </div>
+          <div class="serapan-pagu">
+            <div class="item pns">
+              <span class="label">PNS</span>
+              <div class="value-group">
+                <span class="value" id="paguPNS">Rp 0</span>
+              </div>
+            </div>
+
+            <div class="item pppk">
+              <span class="label">PPPK</span>
+              <div class="value-group">
+                <span class="value" id="paguPPPK">Rp 0</span>
+              </div>
+            </div>
+
+            <div class="item total">
+              <span class="label">Total Pagu</span>
+              <div class="value-group">
+                <span class="value" id="paguTotal">Rp 0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script>
+      /* =========================
+       * GLOBAL CONFIG
+       * ========================= */
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.color = "#6b7280";
+      Chart.defaults.scale.grid.color = "#f3f4f6";
+      Chart.defaults.scale.grid.drawBorder = false;
+      Chart.defaults.maintainAspectRatio = false;
+
+      const COLORS = {
+        primary: "#81DCC2",
+        secondary: "#10b981",
+        accent: "#f59e0b",
+        danger: "#ef4444",
+      };
+
+      const AUTH_TOKEN = "{{ auth_qs }}";
+      const API_SUMMARY = "{{ host_url }}tpp_dashboard?dashboard=2";
+      const API_KELAS = "{{ host_url }}tpp_dashboard?dashboard=3";
+      const API_SERAPAN = "{{ host_url }}tpp_dashboard?dashboard=4";
+
+      let chartFungsional,
+        chartPelaksana,
+        chartKelas,
+        chartSerapanTPP = null;
+
+      /* =========================
+       * HELPER
+       * ========================= */
+
+      // External Tooltip Handler
+      const externalTooltipHandler = (context) => {
+        // Tooltip Element
+        let tooltipEl = document.getElementById("chartjs-tooltip");
+
+        // Create element on first render
+        if (!tooltipEl) {
+          tooltipEl = document.createElement("div");
+          tooltipEl.id = "chartjs-tooltip";
+          tooltipEl.innerHTML =
+            '<div class="tooltip-title"></div><div class="tooltip-body"></div>';
+          document.body.appendChild(tooltipEl);
+        }
+
+        const tooltipModel = context.tooltip;
+
+        // Hide if no tooltip
+        if (tooltipModel.opacity === 0) {
+          tooltipEl.style.opacity = 0;
+          return;
+        }
+
+        // Set Text
+        if (tooltipModel.body) {
+          const titleLines = tooltipModel.title || [];
+          const bodyLines = tooltipModel.body.map((b) => b.lines);
+
+          const titleEl = tooltipEl.querySelector(".tooltip-title");
+          const bodyEl = tooltipEl.querySelector(".tooltip-body");
+
+          if (titleLines.length > 0) {
+            titleEl.style.display = "block";
+            titleEl.innerText = titleLines.join("\n");
+          } else {
+            titleEl.style.display = "none";
+          }
+
+          // Join body lines
+          bodyEl.innerText = bodyLines.join("\n");
+        }
+
+        const position = context.chart.canvas.getBoundingClientRect();
+
+        // Display, position, and set styles for font
+        tooltipEl.style.opacity = 1;
+        tooltipEl.style.left =
+          position.left + window.pageXOffset + tooltipModel.caretX + "px";
+        tooltipEl.style.top =
+          position.top + window.pageYOffset + tooltipModel.caretY + "px";
+      };
+
+      const tooltipConfig = {
+        enabled: false, // Disable canvas tooltip
+        external: externalTooltipHandler, // Use custom HTML tooltip
+        // Keep callbacks for content formatting
+      };
+
+      const parseRupiah = (v) =>
+        parseInt(String(v).replace(/[^0-9]/g, ""), 10) || 0;
+
+      const formatIDR = (v) =>
+        "Rp " + v.toLocaleString("id-ID", { maximumFractionDigits: 0 });
+
+      /* =========================
+       * SUMMARY GRID
+       * ========================= */
+      async function loadSummary() {
+        const res = await fetch(API_SUMMARY, {
+          headers: { Authorization: AUTH_TOKEN },
+        });
+        const data = await res.json();
+
+        const getVal = (title) => {
+          const x = data.find((i) => i.title === title);
+          return x ? parseRupiah(x.count) : 0;
+        };
+
+        const struktural = getVal("Struktural PNS");
+        const fPNS = getVal("Fungsional PNS");
+        const fPPPK = getVal("Fungsional PPPK");
+        const pPNS = getVal("Pelaksana PNS");
+        const pPPPK = getVal("Pelaksana PPPK");
+        const gPNS = getVal("Guru PNS");
+        const gPPPK = getVal("Guru PPPK");
+
+        document.getElementById("sumStrukturalVal").textContent =
+          formatIDR(struktural);
+        renderPie("chartPieFungsional", "sumFungsionalVal", fPNS, fPPPK, "f");
+        renderPie("chartPiePelaksana", "sumPelaksanaVal", pPNS, pPPPK, "p");
+        renderPie("chartPieGuru", "sumGuruVal", gPNS, gPPPK, "g");
+      }
+
+      function renderPie(canvasId, valId, pns, pppk, type) {
+        document.getElementById(valId).textContent = formatIDR(pns + pppk);
+        const ctx = document.getElementById(canvasId).getContext("2d");
+
+        if (type === "f" && chartFungsional) chartFungsional.destroy();
+        if (type === "p" && chartPelaksana) chartPelaksana.destroy();
+
+        const chart = new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels: ["PNS", "PPPK"],
+            datasets: [
+              {
+                data: [pns, pppk],
+                backgroundColor: [
+                  "rgba(255,255,255,0.9)",
+                  "rgba(255,255,255,0.4)",
+                ],
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            cutout: "60%",
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                ...tooltipConfig,
+                callbacks: {
+                  label: function (ctx) {
+                    return `${formatIDR(ctx.parsed)}`;
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (type === "f") chartFungsional = chart;
+        if (type === "p") chartPelaksana = chart;
+      }
+
+      /* =========================
+       * PAGU PER KELAS
+       * ========================= */
+      async function loadKelas() {
+        const res = await fetch(API_KELAS, {
+          headers: { Authorization: AUTH_TOKEN },
+        });
+        const json = await res.json();
+        const data = json.data || [];
+
+        const pns = Array(15).fill(0);
+        const pppk = Array(15).fill(0);
+
+        data.forEach((d) => {
+          const i = d.id_kelas - 1;
+          if (d.jenis_asn === "PNS") pns[i] = d.total_tahun;
+          else pppk[i] = d.total_tahun;
+        });
+
+        const ctx = document.getElementById("chartKelas").getContext("2d");
+        if (chartKelas) chartKelas.destroy();
+
+        chartKelas = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: Array.from({ length: 15 }, (_, i) => `Kelas ${i + 1}`),
+            datasets: [
+              { label: "PNS", data: pns, backgroundColor: COLORS.primary },
+              { label: "PPPK", data: pppk, backgroundColor: COLORS.accent },
+            ],
+          },
+          options: {
+            maintainAspectRatio: false,
+            interaction: {
+              mode: "index",
+              intersect: false,
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: "#94A3B8", font: { size: 11 } },
+              },
+              y: {
+                beginAtZero: true,
+                border: { display: false },
+                grid: { color: "#F1F5F9", borderDash: [5, 5] },
+                ticks: {
+                  callback: (v) => formatIDR(v),
+                  color: "#94A3B8",
+                  font: { size: 10 },
+                },
+              },
+            },
+            plugins: {
+              tooltip: {
+                ...tooltipConfig,
+                callbacks: {
+                  title: (items) => `${items[0].label}`,
+                  label: function (ctx) {
+                    return `${ctx.dataset.label}: ${formatIDR(ctx.parsed.y)}`;
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      /* =========================
+       * SERAPAN
+       * ========================= */
+
+      async function loadSerapanTPP() {
+        try {
+          const res = await fetch(API_SERAPAN, {
+            headers: { Authorization: AUTH_TOKEN },
+          });
+          const json = await res.json();
+          const paguPNS = json.pagu?.pns || 0;
+          const paguPPPK = json.pagu?.pppk || 0;
+          const paguTotal = paguPNS + paguPPPK;
+
+          document.getElementById("paguPNS").textContent = formatIDR(paguPNS);
+          document.getElementById("paguPPPK").textContent = formatIDR(paguPPPK);
+          document.getElementById("paguTotal").textContent =
+            formatIDR(paguTotal);
+
+          const bulanLabels = [
+            "Januari",
+            "Februari",
+            "Maret",
+            "April",
+            "Mei",
+            "Juni",
+            "Juli",
+            "Agustus",
+            "September",
+            "Oktober",
+            "November",
+            "Desember",
+          ];
+
+          const pnsPersen = Array(12).fill(0);
+          const pppkPersen = Array(12).fill(0);
+
+          const pnsNominal = Array(12).fill(0);
+          const pppkNominal = Array(12).fill(0);
+
+          (json.serapan.pns || []).forEach((d) => {
+            const idx = d.bulan - 1;
+            pnsPersen[idx] = d.serapan_persen;
+            pnsNominal[idx] = d.realisasi_bulan;
+          });
+
+          (json.serapan.pppk || []).forEach((d) => {
+            const idx = d.bulan - 1;
+            pppkPersen[idx] = d.serapan_persen;
+            pppkNominal[idx] = d.realisasi_bulan;
+          });
+
+          renderChartSerapan(
+            bulanLabels,
+            pnsPersen,
+            pppkPersen,
+            pnsNominal,
+            pppkNominal
+          );
+        } catch (err) {
+          console.error("Gagal load serapan TPP:", err);
+        }
+      }
+
+      function renderChartSerapan(
+        labels,
+        pnsData,
+        pppkData,
+        pnsNominal,
+        pppkNominal
+      ) {
+        const ctx = document.getElementById("chartSerapan").getContext("2d");
+
+        // Create Gradient
+        const gradientPNS = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientPNS.addColorStop(0, "rgba(129, 220, 194, 0.5)"); // #81DCC2
+        gradientPNS.addColorStop(1, "rgba(129, 220, 194, 0.0)");
+
+        const gradientPPPK = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientPPPK.addColorStop(0, "rgba(226, 232, 240, 0.8)"); // Slate 200
+        gradientPPPK.addColorStop(1, "rgba(226, 232, 240, 0.0)");
+
+        if (chartSerapanTPP) chartSerapanTPP.destroy();
+
+        chartSerapanTPP = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "PNS",
+                data: pnsData,
+                borderColor: COLORS.primary,
+                borderWidth: 3,
+                backgroundColor: gradientPNS,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: COLORS.primary,
+                pointHoverBorderColor: "#fff",
+                pointHoverBorderWidth: 3,
+                metaNominal: pnsNominal,
+              },
+              {
+                label: "PPPK",
+                data: pppkData,
+                borderColor: COLORS.accent, // Slate 400 for neutral line
+                borderWidth: 3,
+                backgroundColor: gradientPPPK,
+                borderDash: [5, 5],
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: COLORS.accent,
+                pointHoverBorderColor: "#fff",
+                pointHoverBorderWidth: 3,
+                metaNominal: pppkNominal,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: "index",
+              intersect: false,
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: {
+                  color: "#94A3B8",
+                  font: { size: 11 },
+                },
+              },
+              y: {
+                min: 0,
+                max: 100,
+                border: { display: false },
+                grid: {
+                  color: "#F1F5F9",
+                  borderDash: [5, 5],
+                },
+                ticks: {
+                  color: "#94A3B8",
+                  padding: 10,
+                  callback: (v) => v + "%",
+                },
+              },
+            },
+            plugins: {
+              legend: { display: false }, // Hide default legend
+              tooltip: {
+                enabled: true,
+                backgroundColor: "#0F172A", // Slate 900
+                titleColor: "#fff",
+                titleFont: { size: 13, weight: 600, family: "Inter" },
+                bodyColor: "#CBD5E1", // Slate 300
+                bodyFont: { size: 12, family: "Inter" },
+                padding: 12,
+                cornerRadius: 12,
+                displayColors: false, // Custom formatting
+                callbacks: {
+                  title: (items) => `Bulan ${items[0].label}`,
+                  label: function (ctx) {
+                    const persen = ctx.parsed.y;
+                    const idx = ctx.dataIndex;
+                    const nominal = ctx.dataset.metaNominal?.[idx] || 0;
+                    const label = ctx.dataset.label;
+
+                    return `${label}: ${persen}% (Rp ${nominal.toLocaleString(
+                      "id-ID"
+                    )})`;
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+      /* =========================
+       * INIT
+       * ========================= */
+      document.addEventListener("DOMContentLoaded", () => {
+        if (!AUTH_TOKEN) {
+          alert("Token tidak ditemukan, silakan login ulang");
+          return;
+        }
+        loadSummary();
+        loadKelas();
+        loadSerapanTPP();
+      });
+    </script>
+  </body>
+</html>

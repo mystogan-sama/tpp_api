@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jabatan Pelaksana - TPP Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* Exact copy of CSS from previous step */
+      :root {
+        --primary: #4f46e5;
+        --primary-dark: #3730a3;
+        --secondary: #10b981;
+        --accent: #f59e0b;
+        --danger: #ef4444;
+        --bg-body: #f3f4f6;
+        --bg-card: #ffffff;
+        --bg-sidebar: #1e1b4b;
+        --text-main: #111827;
+        --text-muted: #6b7280;
+        --radius: 0.75rem;
+        --sidebar-width: 260px;
+        --header-height: 64px;
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+      }
+      body {
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        width: var(--sidebar-width);
+        background-color: var(--bg-sidebar);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        z-index: 50;
+      }
+      .sidebar-brand {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #818cf8;
+        letter-spacing: -0.025em;
+      }
+      .sidebar-brand span {
+        color: white;
+      }
+      .nav-link {
+        text-decoration: none;
+        color: #9ca3af;
+        padding: 12px 16px;
+        margin-bottom: 4px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+      }
+      .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: white;
+      }
+      .nav-link.active {
+        background-color: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+      }
+
+      .main-content {
+        margin-left: var(--sidebar-width);
+        flex: 1;
+        padding: 24px 32px;
+        padding-top: calc(var(--header-height) + 24px);
+        max-width: 1600px;
+      }
+      .top-header {
+        position: fixed;
+        top: 0;
+        left: var(--sidebar-width);
+        right: 0;
+        height: var(--header-height);
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        z-index: 40;
+      }
+      .top-header h1 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+      .user-profile {
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .avatar {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        padding: 24px;
+        border: 1px solid rgba(0, 0, 0, 0.02);
+      }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+      }
+      .card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .section-title {
+        font-size: 1.1rem;
+        color: var(--text-main);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .section-title::before {
+        content: "";
+        display: block;
+        width: 4px;
+        height: 24px;
+        background: var(--primary);
+        border-radius: 4px;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 320px;
+        width: 100%;
+      }
+      select {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+        color: var(--text-main);
+        font-size: 0.85rem;
+        cursor: pointer;
+        outline: none;
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+          width: 240px;
+        }
+        .sidebar.active {
+          transform: translateX(0);
+        }
+        .main-content {
+          margin-left: 0;
+          padding: 16px;
+          padding-top: 80px;
+        }
+        .top-header {
+          left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span>TPP</span> GOV DASHBOARD</div>
+      <nav>
+        <a href="pagu_struktural.html" class="nav-link"
+          ><span>Pagu Struktural</span></a
+        >
+        <a href="pagu_kelas.html" class="nav-link"
+          ><span>Pagu Per Kelas</span></a
+        >
+        <a href="jabatan_pelaksana.html" class="nav-link active"
+          ><span>Jabatan Pelaksana</span></a
+        >
+        <a href="jabatan_fungsional.html" class="nav-link"
+          ><span>Jabatan Fungsional</span></a
+        >
+        <a href="pagu_guru.html" class="nav-link"><span>Pagu Guru</span></a>
+        <a href="serapan_tpp.html" class="nav-link"><span>Serapan TPP</span></a>
+      </nav>
+      <div style="margin-top: auto; font-size: 0.75rem; opacity: 0.5">
+        &copy; 2024 Pemda System
+      </div>
+    </aside>
+
+    <header class="top-header">
+      <h1>Monitoring & Evaluasi TPP</h1>
+      <div class="user-profile">
+        <span>Admin PEMDA</span>
+        <div class="avatar">A</div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section id="sec-pelaksana" class="section-container">
+        <div class="section-header">
+          <div class="section-title">3. Pagu Jabatan Pelaksana</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Komparasi PNS vs PPPK</div>
+            <select id="selPelaksanaSKPD" onchange="updatePelaksanaChart()">
+              <option value="ALL">Semua SKPD (PEMDA)</option>
+            </select>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartPelaksana"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script>
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.color = "#6b7280";
+      Chart.defaults.scale.grid.color = "#f3f4f6";
+      Chart.defaults.scale.grid.drawBorder = false;
+
+      const SKPD_LIST = [
+        "Dinas Pendidikan",
+        "Dinas Kesehatan",
+        "Dinas PU",
+        "Bappeda",
+        "BKPSDM",
+        "Sekretariat Daerah",
+        "Inspektorat",
+      ];
+      const rand = (min, max) =>
+        Math.floor(Math.random() * (max - min + 1)) + min;
+
+      const DATA_PELAKSANA = SKPD_LIST.map((skpd) => ({
+        skpd: skpd,
+        pns: rand(200000000, 800000000),
+        pppk: rand(100000000, 400000000),
+      }));
+
+      let chartPelaksanaInstance = null;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const selPelaksana = document.getElementById("selPelaksanaSKPD");
+        SKPD_LIST.forEach((skpd) => selPelaksana.add(new Option(skpd, skpd)));
+        initSection3();
+      });
+
+      function initSection3() {
+        updatePelaksanaChart();
+      }
+
+      function updatePelaksanaChart() {
+        const selValue = document.getElementById("selPelaksanaSKPD").value;
+        let labels = [],
+          pns = [],
+          pppk = [];
+
+        if (selValue === "ALL") {
+          labels = SKPD_LIST;
+          pns = labels.map(
+            (skpd) => DATA_PELAKSANA.find((d) => d.skpd === skpd).pns
+          );
+          pppk = labels.map(
+            (skpd) => DATA_PELAKSANA.find((d) => d.skpd === skpd).pppk
+          );
+        } else {
+          labels = [selValue];
+          const d = DATA_PELAKSANA.find((data) => data.skpd === selValue);
+          pns = [d.pns];
+          pppk = [d.pppk];
+        }
+
+        const ctx = document.getElementById("chartPelaksana").getContext("2d");
+        if (chartPelaksanaInstance) chartPelaksanaInstance.destroy();
+
+        chartPelaksanaInstance = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "PNS",
+                data: pns,
+                backgroundColor: "#3b82f6",
+                borderRadius: 6,
+              },
+              {
+                label: "PPPK",
+                data: pppk,
+                backgroundColor: "#f97316",
+                borderRadius: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { grid: { display: false } },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
