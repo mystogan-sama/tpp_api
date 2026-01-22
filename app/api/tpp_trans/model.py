@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from threading import Thread
 
@@ -53,6 +54,7 @@ class tpp_trans(db.Model):
     total_bulan_orang = db.Column(mssql.MONEY, nullable=True)
     total_bulan = db.Column(mssql.MONEY, nullable=True)
     total_tahun = db.Column(mssql.MONEY, nullable=True)
+    created_date = db.Column(db.DateTime, default=datetime.now)
 
     #
     #

@@ -48,6 +48,8 @@ respAndPayloadFields = {
     "total_bulan_orang": fields.Fixed(required=False, example="", ),
     "total_bulan": fields.Fixed(required=False, example="", ),
     "total_tahun": fields.Fixed(required=False, example="", ),
+    "created_date": fields.DateTime(readonly=True, example="2023-01-01T00:00:00"),
+
 }
 uniqueField = []
 searchField = ["code", "nama_jabatan"]

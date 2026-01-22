@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
@@ -28,8 +28,8 @@
         --text-muted: #6b7280; /* Gray 500 */
 
         --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1),
-          0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-md:
+          0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         --radius: 0.75rem; /* 12px */
       }
 
@@ -71,7 +71,8 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
           0 4px 6px -2px rgba(0, 0, 0, 0.05);
       }
 
@@ -191,7 +192,9 @@
         box-shadow: var(--shadow-md);
         padding: 24px;
         border: 1px solid rgba(0, 0, 0, 0.02);
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
         height: 100%;
         display: flex;
         flex-direction: column;
@@ -359,6 +362,121 @@
       }
 
       /* =========================
+       * DASHBOARD LAYOUT (8 vs 4)
+       * ========================= */
+      .dashboard-main-layout {
+        display: grid;
+        grid-template-columns: 10fr 2fr; /* 10/2 split */
+        gap: 24px;
+      }
+
+      .charts-column {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .side-summary-column {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      /* Side Summary Cards */
+      .side-summary-card {
+        border-radius: 20px;
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column; /* Vertical Layout */
+        align-items: flex-start; /* Default align left for text */
+        justify-content: space-between;
+        position: relative;
+        height: 100%;
+        min-height: 200px; /* Taller for vertical stack */
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s;
+      }
+
+      .side-summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      /* Pastel Themes */
+      .theme-pastel-green {
+        background-color: #d1e7dd; /* Light Green */
+        color: #0f5132;
+      }
+      .theme-pastel-yellow {
+        background-color: #fef3c7; /* Light Yellow/Amber */
+        color: #92400e;
+      }
+      .theme-pastel-blue {
+        background-color: #bfdbfe; /* Light Blue */
+        color: #1e3a8a;
+      }
+      .theme-pastel-red {
+        background-color: #fecaca; /* Light Red */
+        color: #991b1b;
+      }
+
+      .side-card-content {
+        display: flex;
+        flex-direction: column;
+        z-index: 2;
+        min-width: 0; /* Allow text truncate if needed */
+      }
+
+      .side-card-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 0;
+        opacity: 0.9;
+        white-space: nowrap;
+        width: 100%;
+      }
+
+      .side-card-chart-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin: 12px 0;
+      }
+
+      .side-card-chart {
+        width: 130px;
+        height: 130px;
+      }
+
+      .side-card-value {
+        font-size: 1.25rem;
+        font-weight: 800;
+        margin-top: 0;
+        width: 100%;
+      }
+
+      @media (max-width: 1280px) {
+        .dashboard-main-layout {
+          grid-template-columns: 1fr; /* Stack on smaller screens */
+        }
+        .summary-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 1024px) {
+        /* Keep existing overrides but ensure main layout stacks */
+        .dashboard-main-layout {
+          grid-template-columns: 1fr;
+        }
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* =========================
        * EXTERNAL TOOLTIP
        * ========================= */
       #chartjs-tooltip {
@@ -455,45 +573,95 @@
         </div>
       </div>
 
-      <div class="dashboard-grid">
-        <!-- 1. Pagu Per Kelas (Preserved Script Logic) -->
-        <div class="card full-width">
-          <div class="card-header">
-            <div class="card-title">Pagu Desk Per Kelas</div>
+      <div class="dashboard-main-layout">
+        <!-- 8-Column Area: Existing Charts -->
+        <div class="charts-column">
+          <!-- 1. Pagu Per Kelas (Preserved Script Logic) -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Pagu Desk Per Kelas</div>
+            </div>
+            <div class="chart-container"><canvas id="chartKelas"></canvas></div>
           </div>
-          <div class="chart-container"><canvas id="chartKelas"></canvas></div>
+
+          <!-- 2. Serapan TPP -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Analisis Serapan TPP</div>
+            </div>
+
+            <div class="chart-container">
+              <canvas id="chartSerapan"></canvas>
+            </div>
+            <div class="serapan-pagu">
+              <div class="item pns">
+                <span class="label">PNS</span>
+                <div class="value-group">
+                  <span class="value" id="paguPNS">Rp 0</span>
+                </div>
+              </div>
+
+              <div class="item pppk">
+                <span class="label">PPPK</span>
+                <div class="value-group">
+                  <span class="value" id="paguPPPK">Rp 0</span>
+                </div>
+              </div>
+
+              <div class="item total">
+                <span class="label">Total Pagu</span>
+                <div class="value-group">
+                  <span class="value" id="paguTotal">Rp 0</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- 2. Serapan TPP -->
-        <div class="card full-width">
-          <div class="card-header">
-            <div class="card-title">Analisis Serapan TPP</div>
+        <!-- 4-Column Area: New Side Summary -->
+        <div class="side-summary-column">
+          <!-- Card 1: Pegawai PNS -->
+          <div class="side-summary-card theme-pastel-green">
+            <div class="side-card-title">Pegawai PNS</div>
+            <div class="side-card-chart-wrapper">
+              <div class="side-card-chart">
+                <canvas id="sideChart1"></canvas>
+              </div>
+            </div>
+            <div class="side-card-value" id="sideVal1">0</div>
           </div>
 
-          <div class="chart-container">
-            <canvas id="chartSerapan"></canvas>
+          <!-- Card 2: Pegawai PPPK -->
+          <div class="side-summary-card theme-pastel-yellow">
+            <div class="side-card-title">Pegawai PPPK</div>
+            <div class="side-card-chart-wrapper">
+              <div class="side-card-chart">
+                <canvas id="sideChart2"></canvas>
+              </div>
+            </div>
+            <div class="side-card-value" id="sideVal2">0</div>
           </div>
-          <div class="serapan-pagu">
-            <div class="item pns">
-              <span class="label">PNS</span>
-              <div class="value-group">
-                <span class="value" id="paguPNS">Rp 0</span>
-              </div>
-            </div>
 
-            <div class="item pppk">
-              <span class="label">PPPK</span>
-              <div class="value-group">
-                <span class="value" id="paguPPPK">Rp 0</span>
+          <!-- Card 3: Kriteria PNS -->
+          <div class="side-summary-card theme-pastel-blue">
+            <div class="side-card-title">Kriteria PNS</div>
+            <div class="side-card-chart-wrapper">
+              <div class="side-card-chart">
+                <canvas id="sideChart3"></canvas>
               </div>
             </div>
+            <div class="side-card-value" id="sideVal3">Rp 0</div>
+          </div>
 
-            <div class="item total">
-              <span class="label">Total Pagu</span>
-              <div class="value-group">
-                <span class="value" id="paguTotal">Rp 0</span>
+          <!-- Card 4: Kriteria PPPK -->
+          <div class="side-summary-card theme-pastel-red">
+            <div class="side-card-title">Kriteria PPPK</div>
+            <div class="side-card-chart-wrapper">
+              <div class="side-card-chart">
+                <canvas id="sideChart4"></canvas>
               </div>
             </div>
+            <div class="side-card-value" id="sideVal4">Rp 0</div>
           </div>
         </div>
       </div>
@@ -521,6 +689,7 @@
       const API_SUMMARY = "{{ host_url }}tpp_dashboard?dashboard=2";
       const API_KELAS = "{{ host_url }}tpp_dashboard?dashboard=3";
       const API_SERAPAN = "{{ host_url }}tpp_dashboard?dashboard=4";
+      const API_SUMMARY_SIDE = "{{ host_url }}tpp_dashboard?dashboard=5";
 
       let chartFungsional,
         chartPelaksana,
@@ -616,11 +785,99 @@
         const gPNS = getVal("Guru PNS");
         const gPPPK = getVal("Guru PPPK");
 
+        // Top Summary Grid
         document.getElementById("sumStrukturalVal").textContent =
           formatIDR(struktural);
         renderPie("chartPieFungsional", "sumFungsionalVal", fPNS, fPPPK, "f");
         renderPie("chartPiePelaksana", "sumPelaksanaVal", pPNS, pPPPK, "p");
         renderPie("chartPieGuru", "sumGuruVal", gPNS, gPPPK, "g");
+      }
+
+      /* =========================
+       * SIDE SUMMARY GRID
+       * ========================= */
+      async function loadSummarySide() {
+        try {
+          const res = await fetch(API_SUMMARY_SIDE, {
+            headers: { Authorization: AUTH_TOKEN },
+          });
+          const data = await res.json();
+
+          const getVal = (title, isCurrency = false) => {
+            const item = data.find((i) => {
+              if (i.title !== title) return false;
+              const hasRp = String(i.count).includes("Rp");
+              return isCurrency ? hasRp : !hasRp;
+            });
+            return item ? parseRupiah(item.count) : 0;
+          };
+
+          // 1. Pegawai PNS
+          const totalPns = getVal("Total PNS", false);
+          const strukturalPns = getVal("Struktural PNS", false);
+          const fungsionalPns = getVal("Fungsional PNS", false);
+          const pelaksanaPns = getVal("Pelaksana PNS", false);
+
+          renderSidePieMulti(
+            "sideChart1",
+            "sideVal1",
+            totalPns,
+            [strukturalPns, fungsionalPns, pelaksanaPns],
+            ["#10b981", "#34d399", "#6ee7b7"],
+            ["Struktural", "Fungsional", "Pelaksana"],
+            "count",
+          );
+
+          // 2. Pegawai PPPK
+          const totalPppk = getVal("Total PPPK", false);
+          const strukturalPppk = getVal("Struktural PPPK", false);
+          const fungsionalPppk = getVal("Fungsional PPPK", false);
+          const pelaksanaPppk = getVal("Pelaksana PPPK", false);
+
+          renderSidePieMulti(
+            "sideChart2",
+            "sideVal2",
+            totalPppk,
+            [strukturalPppk, fungsionalPppk, pelaksanaPppk],
+            ["#f59e0b", "#fbbf24", "#fcd34d"],
+            ["Struktural", "Fungsional", "Pelaksana"],
+            "count",
+          );
+
+          // 3. Kriteria PNS (Currency)
+          const kPnsTotal = getVal("Total PNS", true);
+          const kPnsBeban = getVal("Beban Kerja PNS", true);
+          const kPnsPrestasi = getVal("Prestasi Kerja PNS", true);
+          const kPnsKondisi = getVal("Kondisi Kerja PNS", true);
+
+          renderSidePieMulti(
+            "sideChart3",
+            "sideVal3",
+            kPnsTotal,
+            [kPnsBeban, kPnsPrestasi, kPnsKondisi],
+            ["#3b82f6", "#60a5fa", "#93c5fd"],
+            ["Beban Kerja", "Prestasi Kerja", "Kondisi Kerja"],
+            "currency",
+          );
+
+          // 4. Kriteria PPPK (Currency)
+          const kPppkTotal = getVal("Total PPPK", true);
+          const kPppkBeban = getVal("Beban Kerja PPPK", true);
+          const kPppkPrestasi = getVal("Prestasi Kerja PPPK", true);
+          const kPppkKondisi = getVal("Kondisi Kerja PPPK", true);
+
+          renderSidePieMulti(
+            "sideChart4",
+            "sideVal4",
+            kPppkTotal,
+            [kPppkBeban, kPppkPrestasi, kPppkKondisi],
+            ["#ef4444", "#f87171", "#fca5a5"],
+            ["Beban Kerja", "Prestasi Kerja", "Kondisi Kerja"],
+            "currency",
+          );
+        } catch (err) {
+          console.error("Gagal load side summary:", err);
+        }
       }
 
       function renderPie(canvasId, valId, pns, pppk, type) {
@@ -663,6 +920,81 @@
 
         if (type === "f") chartFungsional = chart;
         if (type === "p") chartPelaksana = chart;
+      }
+
+      let sideCharts = {};
+
+      function renderSidePieMulti(
+        canvasId,
+        valId,
+        totalValue,
+        dataValues,
+        bgColors,
+        labels,
+        type = "currency",
+      ) {
+        let formattedVal;
+        if (type === "currency") {
+          if (totalValue > 1000000000000) {
+            formattedVal =
+              "Rp " +
+              (totalValue / 1000000000000).toLocaleString("id-ID", {
+                maximumFractionDigits: 1,
+              }) +
+              " T";
+          } else if (totalValue > 1000000000) {
+            formattedVal =
+              "Rp " +
+              (totalValue / 1000000000).toLocaleString("id-ID", {
+                maximumFractionDigits: 1,
+              }) +
+              " M";
+          } else {
+            formattedVal = formatIDR(totalValue);
+          }
+        } else {
+          // type === "count"
+          formattedVal = totalValue.toLocaleString("id-ID");
+        }
+
+        document.getElementById(valId).textContent = formattedVal;
+        const ctx = document.getElementById(canvasId).getContext("2d");
+
+        if (sideCharts[canvasId]) sideCharts[canvasId].destroy();
+
+        sideCharts[canvasId] = new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: dataValues,
+                backgroundColor: bgColors,
+                borderWidth: 0,
+                borderRadius: 0,
+              },
+            ],
+          },
+          options: {
+            cutout: "60%", // Slightly thicker donut
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                ...tooltipConfig, // Enable external tooltip
+                callbacks: {
+                  label: function (ctx) {
+                    let val = ctx.parsed;
+                    if (type === "currency")
+                      return `${ctx.label}: ${formatIDR(val)}`;
+                    return `${ctx.label}: ${val.toLocaleString("id-ID")}`;
+                  },
+                },
+              },
+            },
+          },
+        });
       }
 
       /* =========================
@@ -790,7 +1122,7 @@
             pnsPersen,
             pppkPersen,
             pnsNominal,
-            pppkNominal
+            pppkNominal,
           );
         } catch (err) {
           console.error("Gagal load serapan TPP:", err);
@@ -802,7 +1134,7 @@
         pnsData,
         pppkData,
         pnsNominal,
-        pppkNominal
+        pppkNominal,
       ) {
         const ctx = document.getElementById("chartSerapan").getContext("2d");
 
@@ -906,7 +1238,7 @@
                     const label = ctx.dataset.label;
 
                     return `${label}: ${persen}% (Rp ${nominal.toLocaleString(
-                      "id-ID"
+                      "id-ID",
                     )})`;
                   },
                 },
@@ -924,6 +1256,7 @@
           return;
         }
         loadSummary();
+        loadSummarySide();
         loadKelas();
         loadSerapanTPP();
       });
